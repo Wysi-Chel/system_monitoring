@@ -621,6 +621,28 @@ function updateMonitoringRecordActionTaken(PDO $pdo, string $tableNameSql, int $
     $stmt->execute();
 }
 
+function markMonitoringMemoPrinted(PDO $pdo, string $tableNameSql, int $id, string $memoAction): void
+{
+    $normalizedMemoAction = normalizeMonitoringMemoAction($memoAction);
+    if ($id <= 0 || $normalizedMemoAction === "") {
+        return;
+    }
+
+    $printedAt = (new DateTimeImmutable("now", new DateTimeZone("Asia/Manila")))->format("Y-m-d H:i:s");
+    $stmt = $pdo->prepare(
+        "UPDATE {$tableNameSql}
+         SET disciplinary_action = :memo_action,
+             action_taken = :memo_action,
+             offense = :memo_action,
+             memo_printed_at = COALESCE(memo_printed_at, :printed_at)
+         WHERE id = :id"
+    );
+    $stmt->bindValue(":memo_action", $normalizedMemoAction, PDO::PARAM_STR);
+    $stmt->bindValue(":printed_at", $printedAt, PDO::PARAM_STR);
+    $stmt->bindValue(":id", $id, PDO::PARAM_INT);
+    $stmt->execute();
+}
+
 function updateMonitoringRecordStatus(PDO $pdo, string $tableNameSql, int $id, string $status): void
 {
     $stmt = $pdo->prepare(

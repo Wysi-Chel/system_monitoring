@@ -83,6 +83,66 @@
 
     restoreSummaryScrollPosition();
 
+    var memoPrintLinks = document.querySelectorAll("[data-memo-print-link]");
+    var bindMemoPrintLink = function (link) {
+        if (
+            typeof window.fetch !== "function"
+            || !window.URL
+            || typeof window.URL.createObjectURL !== "function"
+        ) {
+            return;
+        }
+
+        link.addEventListener("click", function (event) {
+            event.preventDefault();
+            if (link.getAttribute("aria-busy") === "true") {
+                return;
+            }
+
+            link.setAttribute("aria-busy", "true");
+            saveSummaryScrollPosition();
+            var filename = "monitoring_memo.docx";
+
+            window.fetch(link.href, { credentials: "same-origin", cache: "no-store" })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error("Memo download failed.");
+                    }
+
+                    var disposition = response.headers.get("Content-Disposition") || "";
+                    var filenameMatch = /filename="?([^";]+)"?/i.exec(disposition);
+                    if (filenameMatch && filenameMatch[1]) {
+                        filename = filenameMatch[1];
+                    }
+
+                    return response.blob();
+                })
+                .then(function (memoBlob) {
+                    var objectUrl = window.URL.createObjectURL(memoBlob);
+                    var downloadLink = document.createElement("a");
+                    downloadLink.href = objectUrl;
+                    downloadLink.download = filename;
+                    downloadLink.style.display = "none";
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    downloadLink.remove();
+
+                    window.setTimeout(function () {
+                        window.URL.revokeObjectURL(objectUrl);
+                        window.location.reload();
+                    }, 500);
+                })
+                .catch(function () {
+                    link.removeAttribute("aria-busy");
+                    window.alert("Unable to generate the memo right now.");
+                });
+        });
+    };
+
+    for (var memoLinkIndex = 0; memoLinkIndex < memoPrintLinks.length; memoLinkIndex += 1) {
+        bindMemoPrintLink(memoPrintLinks[memoLinkIndex]);
+    }
+
     var applyUppercaseBehavior = function (fields) {
         for (var index = 0; index < fields.length; index += 1) {
             fields[index].addEventListener("input", function () {

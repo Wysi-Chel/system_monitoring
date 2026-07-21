@@ -72,12 +72,12 @@ $appEnvironmentLabel = getApplicationEnvironmentLabel($appEnvironmentName);
 $host = "localhost";
 $baseDbname = "system_monitoring_db";
 $dbname = buildApplicationDatabaseName($baseDbname, $appEnvironmentName);
-$username = "root";
-$password = "";
+$username = "chel";
+$password = "Wysiwyg1721!";
 
 // Excel export helper Python executable.
 // Using the absolute path avoids PATH differences between the terminal and Apache/PHP.
-$pythonCommand = "C:\\Users\\Administrator\\AppData\\Local\\Programs\\Python\\Python314\\python.exe";
+$pythonCommand = "C:\\Users\\IT TechSupport 3\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe";
 
 $companyConfigs = [
     "mitsubishi" => [
@@ -93,7 +93,7 @@ $companyConfigs = [
         "logo_path" => "assets/images/mitsubishi-logo.png",
         "logo_type" => "image/png",
         "logo_alt" => "Mitsubishi Motors Drive your Ambition",
-        "verbal_memo_template" => "MGSC_VerbalWarningMemo.docx",
+        "memo_template" => "MGSC_VerbalWarningMemo.docx",
         "export_slug" => "micei",
     ],
     "hyundai" => [
@@ -109,7 +109,7 @@ $companyConfigs = [
         "logo_path" => "assets/images/hyundai_logo.png",
         "logo_type" => "image/png",
         "logo_alt" => "Hyundai Company",
-        "verbal_memo_template" => "NGSC_VerbalWarningMemo.docx",
+        "memo_template" => "NGSC_VerbalWarningMemo.docx",
         "export_slug" => "ntr",
     ],
 ];
@@ -361,6 +361,7 @@ function ensureMonitoringTable(PDO $pdo, array $company): void
             offense VARCHAR(150),
             disciplinary_action VARCHAR(100),
             action_taken VARCHAR(100),
+            memo_printed_at DATETIME NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )"
     );
@@ -369,6 +370,7 @@ function ensureMonitoringTable(PDO $pdo, array $company): void
     ensureMysqlTableColumn($pdo, $tableNameSql, "incident_report_image_path", "incident_report_image_path VARCHAR(255) NULL AFTER remarks");
     ensureMysqlTableColumn($pdo, $tableNameSql, "disciplinary_action", "disciplinary_action VARCHAR(100) AFTER offense");
     ensureMysqlTableColumn($pdo, $tableNameSql, "action_taken", "action_taken VARCHAR(100) AFTER offense");
+    ensureMysqlTableColumn($pdo, $tableNameSql, "memo_printed_at", "memo_printed_at DATETIME NULL AFTER action_taken");
     syncLegacyTableIntoTargetIfNeeded($pdo, $company["legacy_table_names"] ?? [], $company["table_name"]);
     backfillMonitoringDealerValues($pdo, $tableNameSql);
     backfillMonitoringModuleValues($pdo, $tableNameSql);

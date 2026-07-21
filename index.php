@@ -125,7 +125,7 @@ $validationErrorMessage = resolveMonitoringValidationErrorMessage($_GET["error"]
     <?php require __DIR__ . "/includes/partials/saved_modal.php"; ?>
 <?php endif; ?>
 
-<script src="assets/js/index.js" defer></script>
+<script src="<?= e(buildVersionedAssetPath("assets/js/index.js")) ?>" defer></script>
 </body>
 </html>
     

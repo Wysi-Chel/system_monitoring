@@ -92,6 +92,15 @@ $recordEditUrl = $record !== null
 $recordViewUrl = $record !== null
     ? buildUrl("monitoring_record.php", $recordPageQueryParams, ["edit" => null])
     : "";
+$recordMemoReprintUrl = $record !== null
+    && isUserErrorMonitoringRecord($record)
+    && hasPrintedMonitoringMemo($record)
+    ? buildUrl("export_memo_docx.php", [
+        "company" => $company["key"],
+        "identification_number" => $identificationNumber,
+        "reprint" => 1,
+    ])
+    : "";
 $isResolvedIncidentReport = $record !== null && hasResolvedMonitoringIncidentReportStatus($record);
 $savedTitle = "Record Updated";
 $savedMessage = $identificationNumber !== ""
@@ -193,6 +202,12 @@ function renderMonitoringReadonlyField(string $label, string $value, string $fie
                 <p class="note">Full incident details for ID number <strong><?= e($identificationNumber) ?></strong>.</p>
             </div>
             <div class="summary-actions">
+                <?php if (!$isEditMode && $recordMemoReprintUrl !== ""): ?>
+                <a href="<?= e($recordMemoReprintUrl) ?>" class="button-link secondary icon-button" data-memo-print-link aria-label="Reprint memo" title="Reprint memo">
+                    <?= iconSvg("printer") ?>
+                    <span class="sr-only">Reprint memo</span>
+                </a>
+                <?php endif; ?>
                 <?php if ($isEditMode): ?>
                 <a href="<?= e($recordViewUrl) ?>" class="button-link secondary icon-button" aria-label="Cancel edit" title="Cancel edit">
                     <?= iconSvg("arrow-left") ?>
@@ -261,6 +276,7 @@ function renderMonitoringReadonlyField(string $label, string $value, string $fie
                     <?php renderMonitoringReadonlyField("Status", formatMonitoringDetailDisplayValue(["key" => "status", "format" => "text"], $record)); ?>
                     <?php renderMonitoringReadonlyField("Alert", formatMonitoringDetailDisplayValue(["key" => "data_correction_alert", "format" => "text"], $record)); ?>
                     <?php renderMonitoringReadonlyField("Disciplinary action", formatMonitoringDetailDisplayValue(["key" => "disciplinary_action", "format" => "text"], $record), "field-span-2"); ?>
+                    <?php renderMonitoringReadonlyField("Memo printed", formatMonitoringDetailDisplayValue(["key" => "memo_printed_at", "format" => "timestamp"], $record)); ?>
                     <?php renderMonitoringReadonlyField("Encoded at", formatMonitoringDetailDisplayValue(["key" => "created_at", "format" => "timestamp"], $record), "field-span-2"); ?>
                 </div>
             </section>
@@ -310,6 +326,7 @@ function renderMonitoringReadonlyField(string $label, string $value, string $fie
                         <th>User Error Count</th>
                         <th>Alert</th>
                         <th>Memo Status</th>
+                        <th>Print History</th>
                         <th>View</th>
                     </tr>
                 </thead>
@@ -348,6 +365,7 @@ function renderMonitoringReadonlyField(string $label, string $value, string $fie
                         <td><?= e($historyUserErrorCount > 0 ? (string) $historyUserErrorCount : "N/A") ?></td>
                         <td><?= e($historyAlertValue !== "" ? uppercaseText($historyAlertValue) : "N/A") ?></td>
                         <td><?= e($historyMemoStatus !== "" ? uppercaseText($historyMemoStatus) : "N/A") ?></td>
+                        <td><?= e(formatMonitoringDetailDisplayValue(["key" => "memo_printed_at", "format" => "timestamp"], $historyRow)) ?></td>
                         <td class="record-history-view-cell">
                             <?php if ($isCurrentRecord): ?>
                             <span class="record-history-current-label">Watching</span>
@@ -399,6 +417,6 @@ function renderMonitoringReadonlyField(string $label, string $value, string $fie
     <?php require __DIR__ . "/includes/partials/saved_modal.php"; ?>
 <?php endif; ?>
 
-<script src="assets/js/index.js" defer></script>
+<script src="<?= e(buildVersionedAssetPath("assets/js/index.js")) ?>" defer></script>
 </body>
 </html>

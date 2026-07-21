@@ -158,6 +158,7 @@ $formatCardValue = static function (string $value): string {
             ));
             $identificationNumber = trim((string) ($row["identification_number"] ?? ""));
             $isUserErrorClassification = isUserErrorMonitoringRecord($row);
+            $hasPrintedMemo = hasPrintedMonitoringMemo($row);
             $hasFinalMemo = isFinalMemoMonitoringRecord($row);
             $recordUrl = $identificationNumber !== ""
                 ? buildUrl("monitoring_record.php", $listQueryParams, ["identification_number" => $identificationNumber])
@@ -168,7 +169,7 @@ $formatCardValue = static function (string $value): string {
                     "edit" => 1,
                 ])
                 : "";
-            $memoRecordUrl = $identificationNumber !== "" && $isUserErrorClassification
+            $memoRecordUrl = $identificationNumber !== "" && $isUserErrorClassification && !$hasPrintedMemo
                 ? buildUrl("export_memo_docx.php", [
                     "company" => $company["key"],
                     "identification_number" => $identificationNumber,
@@ -236,9 +237,9 @@ $formatCardValue = static function (string $value): string {
                     </a>
                     <?php endif; ?>
                     <?php if ($memoRecordUrl !== ""): ?>
-                    <a href="<?= e($memoRecordUrl) ?>" class="button-link secondary icon-button summary-card-edit-link" aria-label="Download memo" title="Download memo">
+                    <a href="<?= e($memoRecordUrl) ?>" class="button-link secondary icon-button summary-card-edit-link" data-memo-print-link aria-label="Print memo" title="Print memo">
                         <?= iconSvg("file-text") ?>
-                        <span class="sr-only">Download Memo</span>
+                        <span class="sr-only">Print memo</span>
                     </a>
                     <?php endif; ?>
                     <?php if ($showIncidentReportResolveButton): ?>

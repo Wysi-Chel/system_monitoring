@@ -38,6 +38,11 @@ $filename = buildMemoFilename($company, $record);
 
 try {
     $docxPath = buildDraftMemoDocx($company, $record);
+    $memoAction = normalizeMonitoringMemoAction((string) ($record["disciplinary_action"] ?? ""));
+    $recordId = (int) ($record["id"] ?? 0);
+    if ($memoAction !== "" && $recordId > 0) {
+        markMonitoringMemoPrinted($pdo, $tableNameSql, $recordId, $memoAction);
+    }
     downloadDocxFile($docxPath, $filename);
 } catch (Throwable $e) {
     error_log(sprintf(
@@ -98,9 +103,9 @@ function buildMemoFilenameSegment(string $value): string
 function buildDraftMemoDocx(array $company, array $record): string
 {
     $memoAction = normalizeMonitoringMemoAction((string) ($record["disciplinary_action"] ?? ""));
-    $verbalMemoTemplate = trim((string) ($company["verbal_memo_template"] ?? ""));
-    if ($memoAction === "Verbal Memo" && $verbalMemoTemplate !== "") {
-        return buildVerbalMemoFromTemplate($record, $verbalMemoTemplate);
+    $memoTemplate = trim((string) ($company["memo_template"] ?? ""));
+    if ($memoAction !== "" && $memoTemplate !== "") {
+        return buildMemoFromTemplate($record, $memoTemplate, $memoAction);
     }
 
     $basePath = tempnam(sys_get_temp_dir(), "monitoring_memo_");
@@ -130,17 +135,17 @@ function buildDraftMemoDocx(array $company, array $record): string
     return $docxPath;
 }
 
-function buildVerbalMemoFromTemplate(array $record, string $templateFilename): string
+function buildMemoFromTemplate(array $record, string $templateFilename, string $memoAction): string
 {
     $templatePath = __DIR__ . DIRECTORY_SEPARATOR . "assets" . DIRECTORY_SEPARATOR . "templates"
         . DIRECTORY_SEPARATOR . basename($templateFilename);
     if (!is_file($templatePath)) {
-        throw new RuntimeException("The verbal memo Word template is missing.");
+        throw new RuntimeException("The memo Word template is missing.");
     }
 
-    $basePath = tempnam(sys_get_temp_dir(), "monitoring_verbal_memo_");
+    $basePath = tempnam(sys_get_temp_dir(), "monitoring_memo_template_");
     if ($basePath === false) {
-        throw new RuntimeException("Unable to allocate a temporary verbal memo file.");
+        throw new RuntimeException("Unable to allocate a temporary memo file.");
     }
 
     @unlink($basePath);
@@ -160,6 +165,7 @@ function buildVerbalMemoFromTemplate(array $record, string $templateFilename): s
             "output" => $docxPath,
             "template" => $templatePath,
             "memo_values" => [
+                "memo_action" => $memoAction,
                 "user_name" => memoTemplateValue($record, "user_name"),
                 "date_recorded" => memoTemplateValue($record, "date_recorded", "date"),
                 "reference_number" => $referenceNumber,
@@ -173,7 +179,7 @@ function buildVerbalMemoFromTemplate(array $record, string $templateFilename): s
         ];
         $json = json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
         if (file_put_contents($payloadPath, $json) === false) {
-            throw new RuntimeException("Unable to write the verbal memo payload.");
+            throw new RuntimeException("Unable to write the memo payload.");
         }
 
         runPythonMemoExporter($payloadPath);
@@ -182,7 +188,7 @@ function buildVerbalMemoFromTemplate(array $record, string $templateFilename): s
     }
 
     if (!is_file($docxPath) || filesize($docxPath) === 0) {
-        throw new RuntimeException("The verbal memo Word file was not created.");
+        throw new RuntimeException("The memo Word file was not created.");
     }
 
     return $docxPath;

@@ -82,12 +82,16 @@ def set_labeled_field(body, label: str, value: str) -> None:
     if paragraph is None:
         raise RuntimeError(f"Template field not found: {label}")
 
-    text_nodes = paragraph.findall(f".//{W}t")
-    if len(text_nodes) > 1 and paragraph_text(paragraph).strip() == label:
-        text_nodes[-1].text = value
-        return
-
     source_run = paragraph.find(f"{W}r")
+    tab_run = next((run for run in paragraph.findall(f"{W}r") if run.find(f"{W}tab") is not None), None)
+    if tab_run is not None:
+        remove_content = False
+        for child in list(paragraph):
+            if remove_content:
+                paragraph.remove(child)
+            elif child is tab_run:
+                remove_content = True
+
     new_run = ET.Element(f"{W}r")
     if source_run is not None:
         run_properties = source_run.find(f"{W}rPr")
@@ -96,6 +100,20 @@ def set_labeled_field(body, label: str, value: str) -> None:
     text_node = ET.SubElement(new_run, f"{W}t")
     text_node.text = value
     paragraph.append(new_run)
+
+
+def replace_body_paragraph(body, starts_with: str, replacement: str) -> None:
+    paragraph = next(
+        (
+            child
+            for child in body
+            if child.tag == f"{W}p" and paragraph_text(child).strip().startswith(starts_with)
+        ),
+        None,
+    )
+    if paragraph is None:
+        raise RuntimeError(f"Template paragraph not found: {starts_with}")
+    set_paragraph_segments(paragraph, [(replacement, False)])
 
 
 def set_paragraph_segments(paragraph, segments) -> None:
@@ -113,15 +131,34 @@ def first_cell_paragraph(row):
     return paragraph
 
 
-def populate_verbal_memo_xml(document_xml: bytes, values: dict) -> bytes:
+def populate_memo_xml(document_xml: bytes, values: dict) -> bytes:
     namespaces = register_document_namespaces(document_xml)
     root = ET.fromstring(document_xml)
     body = root.find(f"{W}body")
     if body is None:
         raise RuntimeError("The memo template does not contain a document body.")
 
+    warning_type = {
+        "Verbal Memo": "Verbal Warning",
+        "Written Memo": "Written Warning",
+        "Final Memo": "Final Warning",
+    }.get(values["memo_action"], "Warning")
+    warning_type_lower = warning_type.lower()
+
     set_labeled_field(body, "TO:", values["user_name"])
+    set_labeled_field(body, "SUBJECT:", f"{warning_type} – User Error")
     set_labeled_field(body, "DATE:", values["date_recorded"])
+    replace_body_paragraph(
+        body,
+        "This memo serves as a formal documentation",
+        f"This memo serves as a formal documentation of a {warning_type_lower} regarding:",
+    )
+    replace_body_paragraph(
+        body,
+        "By signing below, you acknowledge",
+        "By signing below, you acknowledge that this "
+        f"{warning_type_lower} was delivered and that you understand the expectations for improvement.",
+    )
 
     tables = [child for child in body if child.tag == f"{W}tbl"]
     if len(tables) < 2:
@@ -178,7 +215,7 @@ def build_from_template(payload: dict) -> None:
 
     with zipfile.ZipFile(template_path, "r") as source:
         document_xml = source.read("word/document.xml")
-        populated_xml = populate_verbal_memo_xml(document_xml, values)
+        populated_xml = populate_memo_xml(document_xml, values)
         with zipfile.ZipFile(output_path, "w") as destination:
             for item in source.infolist():
                 content = populated_xml if item.filename == "word/document.xml" else source.read(item.filename)
