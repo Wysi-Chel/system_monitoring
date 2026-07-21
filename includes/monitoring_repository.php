@@ -408,7 +408,8 @@ function fetchDataCorrectionOffenseStatesByRecordId(PDO $pdo, string $tableNameS
                    UPPER(TRIM(user_name)) AS user_key,
                    disciplinary_action,
                    action_taken,
-                   offense
+                   offense,
+                   memo_issued_at
             FROM {$tableNameSql}
             WHERE COALESCE(TRIM(user_name), '') <> ''
               AND UPPER(TRIM(COALESCE(classification, ''))) = :classification
@@ -641,6 +642,26 @@ function markMonitoringMemoPrinted(PDO $pdo, string $tableNameSql, int $id, stri
     $stmt->bindValue(":printed_at", $printedAt, PDO::PARAM_STR);
     $stmt->bindValue(":id", $id, PDO::PARAM_INT);
     $stmt->execute();
+}
+
+function markMonitoringMemoIssued(PDO $pdo, string $tableNameSql, int $id): bool
+{
+    if ($id <= 0) {
+        return false;
+    }
+
+    $issuedAt = (new DateTimeImmutable("now", new DateTimeZone("Asia/Manila")))->format("Y-m-d H:i:s");
+    $stmt = $pdo->prepare(
+        "UPDATE {$tableNameSql}
+         SET memo_issued_at = COALESCE(memo_issued_at, :issued_at)
+         WHERE id = :id
+           AND memo_printed_at IS NOT NULL"
+    );
+    $stmt->bindValue(":issued_at", $issuedAt, PDO::PARAM_STR);
+    $stmt->bindValue(":id", $id, PDO::PARAM_INT);
+    $stmt->execute();
+
+    return $stmt->rowCount() > 0;
 }
 
 function updateMonitoringRecordStatus(PDO $pdo, string $tableNameSql, int $id, string $status): void

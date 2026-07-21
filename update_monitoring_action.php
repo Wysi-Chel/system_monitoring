@@ -12,6 +12,7 @@ $tableNameSql = quoteMysqlIdentifier($company["table_name"]);
 
 $recordId = is_numeric($_POST["record_id"] ?? null) ? (int) $_POST["record_id"] : 0;
 $disciplinaryAction = trim((string) ($_POST["disciplinary_action"] ?? $_POST["action_taken"] ?? ""));
+$markMemoIssued = ($_POST["mark_memo_issued"] ?? "") === "1";
 $allowedActions = getMonitoringActionOptions();
 $doneStatus = getMonitoringDoneStatus();
 $incidentReportResolvedAction = getMonitoringIncidentReportResolvedAction();
@@ -75,10 +76,24 @@ if ($filterPage !== "" && $filterPage !== "1") {
     $redirectParams["page"] = $filterPage;
 }
 
-if ($recordId > 0 && $disciplinaryAction !== "") {
+if ($recordId > 0 && ($disciplinaryAction !== "" || $markMemoIssued)) {
     $record = fetchMonitoringRecordById($pdo, $tableNameSql, $recordId);
 
     if ($record !== null) {
+        $recordMemoAction = normalizeMonitoringMemoAction((string) ($record["disciplinary_action"] ?? ""));
+
+        if (
+            $markMemoIssued
+            && isUserErrorMonitoringRecord($record)
+            && hasPrintedMonitoringMemo($record)
+            && in_array($recordMemoAction, ["Verbal Memo", "Written Memo"], true)
+            && getIssuedMonitoringMemoAction($record) === ""
+        ) {
+            markMonitoringMemoIssued($pdo, $tableNameSql, $recordId);
+            header("Location: index.php?" . http_build_query($redirectParams) . "#summary-section");
+            exit;
+        }
+
         if (isFinalMemoMonitoringRecord($record)) {
             header("Location: index.php?" . http_build_query($redirectParams) . "#summary-section");
             exit;

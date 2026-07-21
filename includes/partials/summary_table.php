@@ -198,6 +198,11 @@ $formatCardValue = static function (string $value): string {
                 : trim((string) formatSummaryValue(["key" => "offense", "format" => "text"], $row));
             $rowActionOptions = [];
             $hasIssuedMemo = getIssuedMonitoringMemoAction($row) !== "";
+            $memoAction = normalizeMonitoringMemoAction((string) ($row["disciplinary_action"] ?? ""));
+            $canMarkMemoIssued = $isUserErrorClassification
+                && $hasPrintedMemo
+                && !$hasIssuedMemo
+                && in_array($memoAction, ["Verbal Memo", "Written Memo"], true);
             $showIncidentReportResolveButton = !$hasFinalMemo && hasPendingMonitoringIncidentReportStatus($row);
 
             if (!$hasFinalMemo && !$hasIssuedMemo) {
@@ -205,7 +210,7 @@ $formatCardValue = static function (string $value): string {
                     $rowActionOptions[] = $monitoringDoneStatus;
                 }
 
-                if (((int) ($row["data_correction_offense_count"] ?? 0)) >= 1) {
+                if (!$hasPrintedMemo && ((int) ($row["data_correction_offense_count"] ?? 0)) >= 1) {
                     foreach (getAvailableMonitoringMemoActionOptions($row) as $option) {
                         if (!in_array($option, $rowActionOptions, true)) {
                             $rowActionOptions[] = $option;
@@ -261,6 +266,28 @@ $formatCardValue = static function (string $value): string {
                         <button type="submit" class="secondary icon-button summary-card-edit-link" aria-label="Resolve incident report" title="Resolve incident report">
                             <?= iconSvg("check") ?>
                             <span class="sr-only">Resolve incident report</span>
+                        </button>
+                    </form>
+                    <?php endif; ?>
+                    <?php if ($canMarkMemoIssued): ?>
+                    <form action="update_monitoring_action.php" method="POST" class="monitoring-action-form" data-memo-issued-confirm>
+                        <input type="hidden" name="company" value="<?= e($company["key"]) ?>">
+                        <input type="hidden" name="record_id" value="<?= e($row["id"] ?? "") ?>">
+                        <input type="hidden" name="mark_memo_issued" value="1">
+                        <input type="hidden" name="filter_month" value="<?= e($filters["month"] ?? "") ?>">
+                        <input type="hidden" name="filter_day" value="<?= e($filters["day"] ?? "") ?>">
+                        <input type="hidden" name="filter_branch" value="<?= e($filters["branch"] ?? "") ?>">
+                        <input type="hidden" name="filter_dealer" value="<?= e($filters["dealer"] ?? "") ?>">
+                        <input type="hidden" name="filter_identification_number" value="<?= e($filters["identification_number"] ?? "") ?>">
+                        <input type="hidden" name="filter_user_name" value="<?= e($filters["user_name"] ?? "") ?>">
+                        <input type="hidden" name="filter_status" value="<?= e($filters["status"] ?? "") ?>">
+                        <input type="hidden" name="filter_action" value="<?= e($filters["disciplinary_action"] ?? "") ?>">
+                        <input type="hidden" name="filter_data_correction" value="<?= !empty($filters["data_correction_only"]) ? "1" : "" ?>">
+                        <input type="hidden" name="filter_escalation" value="<?= !empty($filters["escalation_only"]) ? "1" : "" ?>">
+                        <input type="hidden" name="filter_page" value="<?= e($pagination["page"]) ?>">
+                        <button type="submit" class="secondary icon-button summary-card-edit-link" aria-label="Mark memo as received and issued" title="Mark memo as received and issued">
+                            <?= iconSvg("send") ?>
+                            <span class="sr-only">Mark memo as received and issued</span>
                         </button>
                     </form>
                     <?php endif; ?>
@@ -345,7 +372,7 @@ $formatCardValue = static function (string $value): string {
                 </div>
                 <div class="summary-card-field summary-card-field-alert">
                     <div class="summary-card-label">Alert / action</div>
-                    <div class="summary-card-value"><?= e($formatCardValue($offenseValue)) ?></div>
+                    <div class="summary-card-value"><?= e($formatCardValue(formatMonitoringMemoActionStatusDisplayValue($row) ?: $offenseValue)) ?></div>
                 </div>
                 <div class="summary-card-field summary-card-field-reason">
                     <div class="summary-card-label">Reason</div>

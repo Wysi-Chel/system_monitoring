@@ -104,6 +104,11 @@ function hasPrintedMonitoringMemo(array $row): bool
     return trim((string) ($row["memo_printed_at"] ?? "")) !== "";
 }
 
+function hasConfirmedMonitoringMemoIssued(array $row): bool
+{
+    return trim((string) ($row["memo_issued_at"] ?? "")) !== "";
+}
+
 function getIssuedMonitoringMemoAction(array $row): string
 {
     $actionValues = [];
@@ -130,6 +135,13 @@ function getIssuedMonitoringMemoAction(array $row): string
         $issuedActionRank = $memoActionRank;
     }
 
+    if (
+        in_array($issuedAction, ["Verbal Memo", "Written Memo"], true)
+        && !hasConfirmedMonitoringMemoIssued($row)
+    ) {
+        return "";
+    }
+
     return $issuedAction;
 }
 
@@ -143,7 +155,7 @@ function formatMonitoringMemoActionStatusDisplayValue(array $row): string
     foreach (["disciplinary_action", "action_taken", "offense"] as $key) {
         $memoAction = normalizeMonitoringMemoAction((string) ($row[$key] ?? ""));
         if ($memoAction !== "") {
-            return $memoAction . " - To issue";
+            return $memoAction;
         }
     }
 

@@ -76,6 +76,15 @@
             }
         }
 
+        if (
+            event.target
+            && event.target.hasAttribute("data-memo-issued-confirm")
+            && !window.confirm("Confirm that the user who committed the error has received this memo. Mark it as issued?")
+        ) {
+            event.preventDefault();
+            return;
+        }
+
         if (isSummaryActionForm(event.target)) {
             saveSummaryScrollPosition();
         }
