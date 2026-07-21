@@ -43,6 +43,7 @@ try {
     echo $firstConfirmation ? "ISSUE_CONFIRMED\n" : "ISSUE_CONFIRMATION_FAILED\n";
     echo !$secondConfirmation ? "SECOND_CONFIRMATION_IGNORED\n" : "SECOND_CONFIRMATION_CHANGED\n";
     echo getIssuedMonitoringMemoAction($issuedRecord ?? []) === "Verbal Memo" ? "ISSUED_STATUS_OK\n" : "ISSUED_STATUS_FAILED\n";
+    echo strpos(formatMonitoringMemoActionStatusDisplayValue($issuedRecord ?? []), "(") !== false ? "ISSUED_DATE_OK\n" : "ISSUED_DATE_FAILED\n";
 } finally {
     $pdo->rollBack();
 }

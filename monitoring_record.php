@@ -275,7 +275,12 @@ function renderMonitoringReadonlyField(string $label, string $value, string $fie
                     <?php renderMonitoringReadonlyField("Processed type", formatMonitoringDetailDisplayValue(["key" => "processed_type", "format" => "text"], $record)); ?>
                     <?php renderMonitoringReadonlyField("Status", formatMonitoringDetailDisplayValue(["key" => "status", "format" => "text"], $record)); ?>
                     <?php renderMonitoringReadonlyField("Alert", formatMonitoringDetailDisplayValue(["key" => "data_correction_alert", "format" => "text"], $record)); ?>
-                    <?php renderMonitoringReadonlyField("Disciplinary action", formatMonitoringDetailDisplayValue(["key" => "disciplinary_action", "format" => "text"], $record), "field-span-2"); ?>
+                    <?php renderMonitoringReadonlyField(
+                        "Disciplinary action",
+                        formatMonitoringMemoActionStatusDisplayValue($record)
+                            ?: formatMonitoringDetailDisplayValue(["key" => "disciplinary_action", "format" => "text"], $record),
+                        "field-span-2"
+                    ); ?>
                     <?php renderMonitoringReadonlyField("Memo printed", formatMonitoringDetailDisplayValue(["key" => "memo_printed_at", "format" => "timestamp"], $record)); ?>
                     <?php renderMonitoringReadonlyField("Encoded at", formatMonitoringDetailDisplayValue(["key" => "created_at", "format" => "timestamp"], $record), "field-span-2"); ?>
                 </div>

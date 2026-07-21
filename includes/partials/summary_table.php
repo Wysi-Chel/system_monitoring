@@ -196,6 +196,8 @@ $formatCardValue = static function (string $value): string {
             $offenseValue = $formattedDisciplinaryAction !== ""
                 ? $formattedDisciplinaryAction
                 : trim((string) formatSummaryValue(["key" => "offense", "format" => "text"], $row));
+            $memoStatusDisplayValue = formatMonitoringMemoActionStatusDisplayValue($row);
+            $alertActionDisplayValue = $memoStatusDisplayValue !== "" ? $memoStatusDisplayValue : $offenseValue;
             $rowActionOptions = [];
             $hasIssuedMemo = getIssuedMonitoringMemoAction($row) !== "";
             $memoAction = normalizeMonitoringMemoAction((string) ($row["disciplinary_action"] ?? ""));
@@ -238,13 +240,13 @@ $formatCardValue = static function (string $value): string {
                     <?php if ($editRecordUrl !== ""): ?>
                     <a href="<?= e($editRecordUrl) ?>" class="button-link secondary icon-button summary-card-edit-link" aria-label="Edit record" title="Edit record">
                         <?= iconSvg("edit") ?>
-                        <span class="sr-only">Edit record</span>
+                        <span>Edit</span>
                     </a>
                     <?php endif; ?>
                     <?php if ($memoRecordUrl !== ""): ?>
                     <a href="<?= e($memoRecordUrl) ?>" class="button-link secondary icon-button summary-card-edit-link" data-memo-print-link aria-label="Print memo" title="Print memo">
                         <?= iconSvg("file-text") ?>
-                        <span class="sr-only">Print memo</span>
+                        <span>Print memo</span>
                     </a>
                     <?php endif; ?>
                     <?php if ($showIncidentReportResolveButton): ?>
@@ -265,7 +267,7 @@ $formatCardValue = static function (string $value): string {
                         <input type="hidden" name="filter_page" value="<?= e($pagination["page"]) ?>">
                         <button type="submit" class="secondary icon-button summary-card-edit-link" aria-label="Resolve incident report" title="Resolve incident report">
                             <?= iconSvg("check") ?>
-                            <span class="sr-only">Resolve incident report</span>
+                            <span>Resolve</span>
                         </button>
                     </form>
                     <?php endif; ?>
@@ -287,7 +289,7 @@ $formatCardValue = static function (string $value): string {
                         <input type="hidden" name="filter_page" value="<?= e($pagination["page"]) ?>">
                         <button type="submit" class="secondary icon-button summary-card-edit-link" aria-label="Mark memo as received and issued" title="Mark memo as received and issued">
                             <?= iconSvg("send") ?>
-                            <span class="sr-only">Mark memo as received and issued</span>
+                            <span>Mark issued</span>
                         </button>
                     </form>
                     <?php endif; ?>
@@ -313,7 +315,7 @@ $formatCardValue = static function (string $value): string {
                             title="Choose Action"
                             onchange="if (this.value !== '') { this.form.submit(); }"
                         >
-                            <option value="" selected disabled>&#9881;</option>
+                            <option value="" selected disabled>Choose action</option>
                             <?php foreach ($rowActionOptions as $option): ?>
                             <option value="<?= e($option) ?>"><?= e($option) ?></option>
                             <?php endforeach; ?>
@@ -372,7 +374,7 @@ $formatCardValue = static function (string $value): string {
                 </div>
                 <div class="summary-card-field summary-card-field-alert">
                     <div class="summary-card-label">Alert / action</div>
-                    <div class="summary-card-value"><?= e($formatCardValue(formatMonitoringMemoActionStatusDisplayValue($row) ?: $offenseValue)) ?></div>
+                    <div class="summary-card-value"><?= e($formatCardValue($alertActionDisplayValue)) ?></div>
                 </div>
                 <div class="summary-card-field summary-card-field-reason">
                     <div class="summary-card-label">Reason</div>

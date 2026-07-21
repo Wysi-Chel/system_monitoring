@@ -331,7 +331,7 @@ $ticketFormDefaults = [
                                 title="Edit Status"
                                 onchange="if (this.value !== '') { this.form.submit(); }"
                             >
-                                <option value="" selected disabled>&#9881;</option>
+                                <option value="" selected disabled>Change status</option>
                                 <?php foreach ($ticketStatusOptions as $option): ?>
                                     <?php if (($row["ticket_status"] ?? "") === $option) { continue; } ?>
                                 <option value="<?= e($option) ?>"><?= e($option) ?></option>

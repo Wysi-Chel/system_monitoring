@@ -20,17 +20,20 @@ $promotionUrl = buildUrl("promote_to_live.php", ["company" => $company["key"]]);
 $navItems = [
     [
         "label" => "Dashboard",
+        "icon" => "home",
         "href" => $monitoringHomeUrl,
         "script" => "index.php",
     ],
     [
         "label" => "Ticket Monitoring",
+        "icon" => "ticket",
         "href" => $ticketNavUrl,
         "script" => "ticket_monitoring.php",
         "visible" => companySupportsTicketMonitoring($company),
     ],
     [
         "label" => "Promote To Live",
+        "icon" => "upload",
         "href" => $promotionUrl,
         "script" => "promote_to_live.php",
         "visible" => canAccessPromoteToLiveUi(),
@@ -58,6 +61,7 @@ $navItems = [
                     <?php continue; ?>
                 <?php endif; ?>
                 <a href="<?= e($item["href"]) ?>" class="sidebar-link<?= $currentScript === $item["script"] ? " active" : "" ?>">
+                    <?= iconSvg((string) ($item["icon"] ?? "home")) ?>
                     <span><?= e($item["label"]) ?></span>
                 </a>
             <?php endforeach; ?>
@@ -66,8 +70,14 @@ $navItems = [
 
     <section class="sidebar-action">
         <div class="sidebar-panel-label">Quick Action</div>
-        <a href="<?= e($encodeRecordUrl) ?>" class="button-link primary">Encode New Record</a>
-        <a href="<?= e($summaryUrl) ?>" class="button-link secondary">Open Summary</a>
+        <a href="<?= e($encodeRecordUrl) ?>" class="button-link button-with-icon primary">
+            <?= iconSvg("plus") ?>
+            <span>Encode New Record</span>
+        </a>
+        <a href="<?= e($summaryUrl) ?>" class="button-link button-with-icon secondary">
+            <?= iconSvg("file-text") ?>
+            <span>Open Summary</span>
+        </a>
     </section>
 
     <div class="sidebar-footer">

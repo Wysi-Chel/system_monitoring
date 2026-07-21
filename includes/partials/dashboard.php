@@ -95,7 +95,10 @@ $renderDashboardBreakdown = static function (array $items, string $emptyMessage)
                 <div>
                     <h3>Ticket Snapshot</h3>
                 </div>
-                <a href="<?= e($ticketMonitoringUrl) ?>" class="button-link secondary">Open Ticket Monitoring</a>
+                <a href="<?= e($ticketMonitoringUrl) ?>" class="button-link button-with-icon secondary">
+                    <?= iconSvg("ticket") ?>
+                    <span>Open Ticket Monitoring</span>
+                </a>
             </div>
 
             <div class="dashboard-ticket-metrics">

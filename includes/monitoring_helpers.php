@@ -23,12 +23,14 @@ function iconSvg(string $name): string
         "file-text" => '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M16 13H8"></path><path d="M16 17H8"></path><path d="M10 9H8"></path>',
         "home" => '<path d="m3 11 9-8 9 8"></path><path d="M5 10v11h14V10"></path><path d="M9 21v-6h6v6"></path>',
         "moon" => '<path d="M12 3a6 6 0 0 0 9 7.5A9 9 0 1 1 12 3Z"></path>',
+        "plus" => '<path d="M12 5v14"></path><path d="M5 12h14"></path>',
         "printer" => '<path d="M6 9V3h12v6"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 14h12v7H6z"></path>',
         "refresh" => '<path d="M21 12a9 9 0 0 1-15.5 6.2"></path><path d="M3 12A9 9 0 0 1 18.5 5.8"></path><path d="M3 18v-6h6"></path><path d="M21 6v6h-6"></path>',
         "save" => '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8"></path>',
         "search" => '<circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path>',
         "send" => '<path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path>',
         "sun" => '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>',
+        "ticket" => '<path d="M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4Z"></path><path d="M13 6v2"></path><path d="M13 11v2"></path><path d="M13 16v2"></path>',
         "trash" => '<path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="m19 6-1 15H6L5 6"></path>',
         "upload" => '<path d="M12 21V9"></path><path d="m7 14 5-5 5 5"></path><path d="M5 3h14"></path>',
         "x" => '<path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>',
@@ -149,7 +151,13 @@ function formatMonitoringMemoActionStatusDisplayValue(array $row): string
 {
     $issuedAction = getIssuedMonitoringMemoAction($row);
     if ($issuedAction !== "") {
-        return $issuedAction . " - Issued";
+        $displayValue = $issuedAction . " - Issued";
+        $issuedAt = trim((string) ($row["memo_issued_at"] ?? ""));
+        $issuedDate = $issuedAt !== "" ? formatDisplayDate($issuedAt) : "";
+
+        return $issuedDate !== ""
+            ? $displayValue . " (" . $issuedDate . ")"
+            : $displayValue;
     }
 
     foreach (["disciplinary_action", "action_taken", "offense"] as $key) {
