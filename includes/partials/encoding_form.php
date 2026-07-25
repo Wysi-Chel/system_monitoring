@@ -5,6 +5,13 @@ $recordFormSectionClass = $isEditingRecord ? "record-edit-panel" : "card";
 $recordFormTitle = $isEditingRecord ? "Edit Encoded Record" : "Encode New Record";
 $recordFormSubmitLabel = $isEditingRecord ? "Update Record" : "Save";
 $recordFormIdentificationNumber = trim((string) ($editingRecord["identification_number"] ?? $nextMonitoringIdentificationNumber));
+$hasExistingIncidentReportAttachment = trim((string) ($editingRecord["incident_report_image_path"] ?? "")) !== "";
+$userErrorCountsByUser = isset($userErrorCountsByUser) && is_array($userErrorCountsByUser)
+    ? $userErrorCountsByUser
+    : [];
+$currentEditingUserErrorName = $isEditingRecord && isUserErrorMonitoringRecord($editingRecord)
+    ? uppercaseText(trim((string) ($editingRecord["user_name"] ?? "")))
+    : "";
 $recordFormValue = static function (string $key, string $default = "") use ($editingRecord): string {
     if ($editingRecord === null) {
         return $default;
@@ -30,7 +37,14 @@ $userNameSuggestions = isset($userNameSuggestions) && is_array($userNameSuggesti
     </div>
     <?php endif; ?>
 
-    <form action="save.php" method="POST" id="record-form" enctype="multipart/form-data">
+    <form
+        action="save.php"
+        method="POST"
+        id="record-form"
+        enctype="multipart/form-data"
+        data-user-error-counts="<?= e((string) json_encode($userErrorCountsByUser, JSON_HEX_APOS | JSON_HEX_QUOT)) ?>"
+        data-current-user-error-name="<?= e($currentEditingUserErrorName) ?>"
+    >
         <input type="hidden" name="company" value="<?= e($company["key"]) ?>">
         <input type="hidden" name="identification_number" value="<?= e($recordFormIdentificationNumber) ?>">
         <?php if ($isEditingRecord): ?>
@@ -173,10 +187,11 @@ $userNameSuggestions = isset($userNameSuggestions) && is_array($userNameSuggesti
                 </div>
 
                 <div class="field field-span-2">
-                    <label for="incident-report-image">Incident report image</label>
-                    <input type="file" id="incident-report-image" name="incident_report_image" accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif">
-                    <?php if ($isEditingRecord && trim((string) ($editingRecord["incident_report_image_path"] ?? "")) !== ""): ?>
-                    <p class="note form-field-note">Leave blank to keep the current image.</p>
+                    <label for="incident-report-image">Incident report attachment</label>
+                    <input type="file" id="incident-report-image" name="incident_report_image" accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif" data-has-existing-attachment="<?= $hasExistingIncidentReportAttachment ? "true" : "false" ?>">
+                    <?php if ($isEditingRecord && $hasExistingIncidentReportAttachment): ?>
+                    <p class="note form-field-note">Leave blank to keep the current attachment. Any replacement must differ from this user's previous incident reports.</p>
+                    <?php else: ?>
                     <?php endif; ?>
                 </div>
             </div>

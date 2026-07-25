@@ -2057,6 +2057,89 @@ html.dark-theme .status-pill-closed {
     line-height: 1.2;
 }
 
+.memo-issuance-table {
+    min-width: 880px;
+}
+
+.memo-issuance-table th:first-child,
+.memo-issuance-table td:first-child,
+.memo-issuance-table th:last-child,
+.memo-issuance-table td:last-child {
+    text-align: center;
+}
+
+.memo-issuance-table input[type="date"] {
+    width: 154px;
+    min-height: 38px;
+    padding: 7px 9px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+}
+
+.memo-issued-form {
+    display: inline-flex;
+    justify-content: center;
+}
+
+.memo-issued-check {
+    position: relative;
+    display: inline-flex;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+}
+
+.memo-issued-check input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}
+
+.memo-issued-check span {
+    display: inline-flex;
+    width: 30px;
+    height: 30px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: var(--surface);
+    color: transparent;
+    transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.memo-issued-check span svg {
+    width: 17px;
+    height: 17px;
+}
+
+.memo-issued-check:hover span,
+.memo-issued-check input:focus-visible + span {
+    border-color: var(--brand);
+}
+
+.memo-issued-check input:checked + span,
+.memo-issued-check-complete span {
+    border-color: var(--brand);
+    background: var(--brand);
+    color: #ffffff;
+}
+
+.memo-issued-check-complete {
+    cursor: default;
+}
+
+.memo-history-print {
+    width: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    padding: 0;
+}
+
 .record-image-panel {
     border: 1px solid var(--border);
     background: var(--surface-soft);
@@ -4233,6 +4316,1119 @@ body.page-ticket-monitoring .sidebar-action .icon-button {
         display: flex;
         flex-wrap: wrap;
         grid-template-columns: none;
+    }
+}
+
+/* Minimal sidebar refinement inspired by the supplied Dribbble reference. */
+body.page-system-monitoring:not(.page-print-summary),
+body.page-ticket-monitoring {
+    --shell-shadow: 0 14px 36px rgba(45, 37, 35, 0.08);
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 20px;
+    padding: 20px;
+    background:
+        radial-gradient(circle at 8% 4%, var(--brand-soft), transparent 22%),
+        linear-gradient(145deg, #f7f7f8 0%, #f0eeec 52%, #f6f5f4 100%);
+    transition: grid-template-columns 0.22s ease;
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary),
+html.dark-theme body.page-ticket-monitoring {
+    --shell-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
+    background:
+        radial-gradient(circle at 8% 4%, var(--brand-soft), transparent 24%),
+        linear-gradient(145deg, #15181d 0%, #1b1f25 52%, #14171b 100%);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .app-sidebar,
+body.page-ticket-monitoring .app-sidebar {
+    top: 20px;
+    gap: 14px;
+    max-height: calc(100vh - 40px);
+    padding: 16px;
+    border-color: rgba(31, 35, 40, 0.08);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 20px 55px rgba(35, 30, 28, 0.1);
+    backdrop-filter: blur(18px);
+    transition: padding 0.22s ease, border-radius 0.22s ease;
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .app-sidebar,
+html.dark-theme body.page-ticket-monitoring .app-sidebar {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(25, 29, 35, 0.96);
+    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.34);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-header,
+body.page-ticket-monitoring .sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+    padding: 2px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-brand,
+body.page-ticket-monitoring .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+    color: var(--text);
+    text-decoration: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-brand-mark,
+body.page-ticket-monitoring .sidebar-brand-mark {
+    display: grid;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 20px rgba(35, 30, 28, 0.08);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-brand-mark img,
+body.page-ticket-monitoring .sidebar-brand-mark img {
+    display: block;
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-brand-copy,
+body.page-ticket-monitoring .sidebar-brand-copy {
+    display: grid;
+    min-width: 0;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-brand-copy .brand-kicker,
+body.page-ticket-monitoring .sidebar-brand-copy .brand-kicker {
+    overflow: hidden;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-brand-copy .brand-title,
+body.page-ticket-monitoring .sidebar-brand-copy .brand-title {
+    overflow: hidden;
+    margin: 2px 0 0;
+    font-size: 0.96rem;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-toggle,
+body.page-ticket-monitoring .sidebar-toggle {
+    display: inline-grid;
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: #f1f2f4;
+    color: #5e6269;
+    box-shadow: none;
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .sidebar-toggle,
+html.dark-theme body.page-ticket-monitoring .sidebar-toggle {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-soft);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-toggle:hover,
+body.page-ticket-monitoring .sidebar-toggle:hover {
+    background: var(--brand-soft);
+    color: var(--brand-dark);
+    transform: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-toggle svg,
+body.page-ticket-monitoring .sidebar-toggle svg,
+body.page-system-monitoring:not(.page-print-summary) .sidebar-search svg,
+body.page-ticket-monitoring .sidebar-search svg,
+body.page-system-monitoring:not(.page-print-summary) .sidebar-note-icon svg,
+body.page-ticket-monitoring .sidebar-note-icon svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-search,
+body.page-ticket-monitoring .sidebar-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: 13px;
+    background: #f4f5f6;
+    color: #70747b;
+    font-size: 0.84rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .sidebar-search,
+html.dark-theme body.page-ticket-monitoring .sidebar-search {
+    background: rgba(255, 255, 255, 0.055);
+    color: var(--text-soft);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-search:hover,
+body.page-ticket-monitoring .sidebar-search:hover {
+    border-color: var(--border);
+    background: var(--surface-soft);
+    color: var(--text);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-search span,
+body.page-ticket-monitoring .sidebar-search span {
+    flex: 1 1 auto;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-search kbd,
+body.page-ticket-monitoring .sidebar-search kbd {
+    padding: 3px 7px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--surface-strong);
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 0.65rem;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-panel,
+body.page-system-monitoring:not(.page-print-summary) .sidebar-action,
+body.page-ticket-monitoring .sidebar-panel,
+body.page-ticket-monitoring .sidebar-action {
+    gap: 8px;
+    padding: 10px 2px;
+    border: 0;
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-panel-label,
+body.page-ticket-monitoring .sidebar-panel-label {
+    padding: 0 10px 5px;
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-nav,
+body.page-ticket-monitoring .sidebar-nav {
+    gap: 4px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-link,
+body.page-ticket-monitoring .sidebar-link {
+    min-height: 44px;
+    gap: 11px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    color: #656970;
+    font-size: 0.88rem;
+    font-weight: 600;
+    transform: none;
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .sidebar-link,
+html.dark-theme body.page-ticket-monitoring .sidebar-link {
+    color: var(--text-soft);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-link:hover,
+body.page-ticket-monitoring .sidebar-link:hover {
+    background: #f4f5f6;
+    color: var(--text);
+    transform: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-link.active,
+body.page-ticket-monitoring .sidebar-link.active {
+    background: var(--brand-soft);
+    color: var(--brand-dark);
+    transform: none;
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .sidebar-link:hover,
+html.dark-theme body.page-ticket-monitoring .sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.065);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .company-switch,
+body.page-ticket-monitoring .company-switch {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .switch-link,
+body.page-ticket-monitoring .switch-link {
+    min-height: 40px;
+    padding: 8px 9px;
+    border: 0;
+    border-radius: 11px;
+    background: #f4f5f6;
+    color: #656970;
+    font-size: 0.72rem;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .switch-link,
+html.dark-theme body.page-ticket-monitoring .switch-link {
+    background: rgba(255, 255, 255, 0.055);
+    color: var(--text-soft);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .switch-link:hover,
+body.page-ticket-monitoring .switch-link:hover {
+    border-color: transparent;
+    background: var(--surface-soft);
+    color: var(--text);
+    transform: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .company-switch .switch-link.active,
+body.page-system-monitoring:not(.page-print-summary) .company-switch .switch-link[aria-current="page"],
+body.page-ticket-monitoring .company-switch .switch-link.active,
+body.page-ticket-monitoring .company-switch .switch-link[aria-current="page"] {
+    background: var(--brand);
+    color: #ffffff;
+    box-shadow: 0 8px 18px var(--focus);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .switch-link-short,
+body.page-ticket-monitoring .switch-link-short {
+    display: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-action .button-link,
+body.page-ticket-monitoring .sidebar-action .button-link {
+    justify-content: flex-start;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    box-shadow: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-action .sidebar-primary-action,
+body.page-ticket-monitoring .sidebar-action .sidebar-primary-action {
+    border-color: var(--brand);
+    background: var(--brand);
+    color: #ffffff;
+    box-shadow: 0 10px 22px var(--focus);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-action .sidebar-secondary-action,
+body.page-ticket-monitoring .sidebar-action .sidebar-secondary-action {
+    border-color: transparent;
+    background: #f4f5f6;
+    color: #5f636a;
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .sidebar-action .sidebar-secondary-action,
+html.dark-theme body.page-ticket-monitoring .sidebar-action .sidebar-secondary-action {
+    background: rgba(255, 255, 255, 0.055);
+    color: var(--text-soft);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-footer,
+body.page-ticket-monitoring .sidebar-footer {
+    gap: 8px;
+    padding-top: 4px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-note,
+body.page-ticket-monitoring .sidebar-note {
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 11px 12px;
+    border: 0;
+    border-radius: 13px;
+    background: #f4f5f6;
+    box-shadow: none;
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .sidebar-note,
+html.dark-theme body.page-ticket-monitoring .sidebar-note {
+    background: rgba(255, 255, 255, 0.055);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-note-icon,
+body.page-ticket-monitoring .sidebar-note-icon {
+    display: grid;
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border-radius: 10px;
+    background: var(--surface-strong);
+    color: var(--brand-dark);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-note-copy,
+body.page-ticket-monitoring .sidebar-note-copy {
+    display: grid;
+    min-width: 0;
+    font-size: 0.68rem;
+    line-height: 1.25;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-note-copy strong,
+body.page-ticket-monitoring .sidebar-note-copy strong {
+    overflow: hidden;
+    margin-top: 2px;
+    font-size: 0.78rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .app-topbar,
+body.page-ticket-monitoring .app-topbar {
+    width: min(100%, 1280px);
+    padding: 22px 26px;
+    border-radius: 22px;
+    background: var(--surface-strong);
+    box-shadow: var(--shell-shadow);
+}
+
+body.page-system-monitoring:not(.page-print-summary) main > .card,
+body.page-ticket-monitoring main > .card {
+    width: min(100%, 1280px);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .card,
+body.page-ticket-monitoring .card {
+    border-radius: 22px;
+    background: var(--surface-strong);
+    box-shadow: var(--shell-shadow);
+}
+
+body.page-system-monitoring:not(.page-print-summary) button,
+body.page-system-monitoring:not(.page-print-summary) .button-link,
+body.page-system-monitoring:not(.page-print-summary) .page-number,
+body.page-ticket-monitoring button,
+body.page-ticket-monitoring .button-link,
+body.page-ticket-monitoring .page-number {
+    border-radius: 999px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .primary,
+body.page-ticket-monitoring .primary {
+    border-color: var(--brand);
+    background: var(--brand);
+    box-shadow: 0 8px 18px var(--focus);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .secondary,
+body.page-system-monitoring:not(.page-print-summary) .page-number,
+body.page-ticket-monitoring .secondary,
+body.page-ticket-monitoring .page-number {
+    border-color: var(--border);
+    background: var(--surface-strong);
+}
+
+body.page-system-monitoring:not(.page-print-summary) input,
+body.page-system-monitoring:not(.page-print-summary) select,
+body.page-system-monitoring:not(.page-print-summary) textarea,
+body.page-ticket-monitoring input,
+body.page-ticket-monitoring select,
+body.page-ticket-monitoring textarea {
+    border-radius: 12px;
+    background: var(--surface-strong);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .option-button span,
+body.page-ticket-monitoring .option-button span,
+body.page-system-monitoring:not(.page-print-summary) .summary-action-select,
+body.page-system-monitoring:not(.page-print-summary) .ticket-status-select,
+body.page-ticket-monitoring .summary-action-select,
+body.page-ticket-monitoring .ticket-status-select {
+    border-radius: 12px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .form-section,
+body.page-ticket-monitoring .form-section,
+body.page-system-monitoring:not(.page-print-summary) .summary-card,
+body.page-ticket-monitoring .summary-card,
+body.page-system-monitoring:not(.page-print-summary) .dashboard-panel,
+body.page-ticket-monitoring .dashboard-panel,
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-card,
+body.page-ticket-monitoring .dashboard-metric-card {
+    border-radius: 18px;
+}
+
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary),
+html.sidebar-collapsed body.page-ticket-monitoring {
+    grid-template-columns: 82px minmax(0, 1fr);
+}
+
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .app-sidebar,
+html.sidebar-collapsed body.page-ticket-monitoring .app-sidebar {
+    padding: 14px 12px;
+}
+
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-header,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-header {
+    flex-direction: column;
+}
+
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-brand-copy,
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-panel-label,
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-link span,
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-search span,
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-search kbd,
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-action .button-link span,
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-note-copy,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-brand-copy,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-panel-label,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-link span,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-search span,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-search kbd,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-action .button-link span,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-note-copy {
+    display: none;
+}
+
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-toggle svg,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-toggle svg {
+    transform: rotate(180deg);
+}
+
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-search,
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-link,
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-action .button-link,
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-note,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-search,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-link,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-action .button-link,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-note {
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    min-height: 48px;
+    margin-inline: auto;
+    padding: 0;
+    border-radius: 14px;
+}
+
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .company-switch,
+html.sidebar-collapsed body.page-ticket-monitoring .company-switch {
+    grid-template-columns: 1fr;
+}
+
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .switch-link,
+html.sidebar-collapsed body.page-ticket-monitoring .switch-link {
+    width: 48px;
+    min-height: 44px;
+    margin-inline: auto;
+    padding: 0;
+}
+
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .switch-link-label,
+html.sidebar-collapsed body.page-ticket-monitoring .switch-link-label {
+    display: none;
+}
+
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .switch-link-short,
+html.sidebar-collapsed body.page-ticket-monitoring .switch-link-short {
+    display: inline;
+}
+
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-note-icon,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-note-icon {
+    flex-basis: 32px;
+}
+
+@media (max-width: 980px) {
+    body.page-system-monitoring:not(.page-print-summary),
+    body.page-ticket-monitoring,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary),
+    html.sidebar-collapsed body.page-ticket-monitoring {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "sidebar"
+            "topbar"
+            "main";
+        padding: 16px;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .app-sidebar,
+    body.page-ticket-monitoring .app-sidebar,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .app-sidebar,
+    html.sidebar-collapsed body.page-ticket-monitoring .app-sidebar {
+        position: static;
+        max-height: none;
+        padding: 16px;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-toggle,
+    body.page-ticket-monitoring .sidebar-toggle {
+        display: none;
+    }
+
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-header,
+    html.sidebar-collapsed body.page-ticket-monitoring .sidebar-header {
+        flex-direction: row;
+    }
+
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-brand-copy,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-panel-label,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-link span,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-search span,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-search kbd,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-action .button-link span,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-note-copy,
+    html.sidebar-collapsed body.page-ticket-monitoring .sidebar-brand-copy,
+    html.sidebar-collapsed body.page-ticket-monitoring .sidebar-panel-label,
+    html.sidebar-collapsed body.page-ticket-monitoring .sidebar-link span,
+    html.sidebar-collapsed body.page-ticket-monitoring .sidebar-search span,
+    html.sidebar-collapsed body.page-ticket-monitoring .sidebar-search kbd,
+    html.sidebar-collapsed body.page-ticket-monitoring .sidebar-action .button-link span,
+    html.sidebar-collapsed body.page-ticket-monitoring .sidebar-note-copy {
+        display: initial;
+    }
+
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-brand-copy,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-note-copy,
+    html.sidebar-collapsed body.page-ticket-monitoring .sidebar-brand-copy,
+    html.sidebar-collapsed body.page-ticket-monitoring .sidebar-note-copy {
+        display: grid;
+    }
+
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-search,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-link,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-action .button-link,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-note,
+    html.sidebar-collapsed body.page-ticket-monitoring .sidebar-search,
+    html.sidebar-collapsed body.page-ticket-monitoring .sidebar-link,
+    html.sidebar-collapsed body.page-ticket-monitoring .sidebar-action .button-link,
+    html.sidebar-collapsed body.page-ticket-monitoring .sidebar-note {
+        justify-content: flex-start;
+        width: 100%;
+        height: auto;
+        min-height: 44px;
+        margin-inline: 0;
+        padding: 10px 12px;
+        border-radius: 12px;
+    }
+
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .company-switch,
+    html.sidebar-collapsed body.page-ticket-monitoring .company-switch {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .switch-link,
+    html.sidebar-collapsed body.page-ticket-monitoring .switch-link {
+        width: 100%;
+        min-height: 40px;
+        margin-inline: 0;
+    }
+
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .switch-link-label,
+    html.sidebar-collapsed body.page-ticket-monitoring .switch-link-label {
+        display: inline;
+    }
+
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .switch-link-short,
+    html.sidebar-collapsed body.page-ticket-monitoring .switch-link-short {
+        display: none;
+    }
+}
+
+@media (max-width: 700px) {
+    body.page-system-monitoring:not(.page-print-summary),
+    body.page-ticket-monitoring,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary),
+    html.sidebar-collapsed body.page-ticket-monitoring {
+        padding: 12px;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .app-sidebar,
+    body.page-ticket-monitoring .app-sidebar,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .app-sidebar,
+    html.sidebar-collapsed body.page-ticket-monitoring .app-sidebar {
+        border-radius: 20px;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-nav,
+    body.page-ticket-monitoring .sidebar-nav {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-link,
+    body.page-ticket-monitoring .sidebar-link,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-link,
+    html.sidebar-collapsed body.page-ticket-monitoring .sidebar-link {
+        justify-content: center;
+        padding-inline: 8px;
+        text-align: center;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-link span,
+    body.page-ticket-monitoring .sidebar-link span {
+        font-size: 0.72rem;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-action,
+    body.page-ticket-monitoring .sidebar-action {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-action .sidebar-panel-label,
+    body.page-ticket-monitoring .sidebar-action .sidebar-panel-label {
+        grid-column: 1 / -1;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-action .button-link,
+    body.page-ticket-monitoring .sidebar-action .button-link,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-action .button-link,
+    html.sidebar-collapsed body.page-ticket-monitoring .sidebar-action .button-link {
+        justify-content: center;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-search kbd,
+    body.page-ticket-monitoring .sidebar-search kbd {
+        display: none;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-nav,
+    body.page-ticket-monitoring .sidebar-nav,
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-action,
+    body.page-ticket-monitoring .sidebar-action {
+        grid-template-columns: 1fr;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-action .sidebar-panel-label,
+    body.page-ticket-monitoring .sidebar-action .sidebar-panel-label {
+        grid-column: auto;
+    }
+}
+
+body.page-system-monitoring:not(.page-print-summary) .app-sidebar,
+body.page-ticket-monitoring .app-sidebar {
+    max-height: none;
+    overflow: visible;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-toggle,
+body.page-ticket-monitoring .sidebar-toggle {
+    position: absolute;
+    top: 50%;
+    right: -18px;
+    z-index: 4;
+    width: 36px;
+    height: 36px;
+    transform: translateY(-50%);
+    box-shadow: 0 9px 24px rgba(35, 30, 28, 0.14);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-toggle:hover,
+body.page-ticket-monitoring .sidebar-toggle:hover {
+    transform: translateY(-50%);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-theme-control,
+body.page-ticket-monitoring .sidebar-theme-control {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 13px;
+    background: #f4f5f6;
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .sidebar-theme-control,
+html.dark-theme body.page-ticket-monitoring .sidebar-theme-control {
+    background: rgba(255, 255, 255, 0.055);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-theme-label,
+body.page-ticket-monitoring .sidebar-theme-label {
+    color: var(--text-soft);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .theme-switch,
+body.page-ticket-monitoring .theme-switch {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 58px;
+    width: 58px;
+    min-width: 58px;
+    height: 32px;
+    min-height: 32px;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 999px;
+    background: #dfe1e5;
+    color: #777b83;
+    box-shadow: inset 0 1px 3px rgba(13, 14, 16, 0.12);
+    transform: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .theme-switch:hover,
+body.page-ticket-monitoring .theme-switch:hover {
+    background: #d7d9de;
+    transform: none;
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .theme-switch,
+html.dark-theme body.page-ticket-monitoring .theme-switch {
+    background: #0d0e10;
+    color: #94969e;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .theme-switch-icon,
+body.page-ticket-monitoring .theme-switch-icon {
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+    display: grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .theme-switch-sun,
+body.page-ticket-monitoring .theme-switch-sun {
+    left: 4px;
+    color: #595c61;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .theme-switch-moon,
+body.page-ticket-monitoring .theme-switch-moon {
+    right: 4px;
+    color: #94969e;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .theme-switch-icon svg,
+body.page-ticket-monitoring .theme-switch-icon svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .theme-switch-thumb,
+body.page-ticket-monitoring .theme-switch-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    z-index: 1;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #f8f8f8;
+    box-shadow: 0 3px 9px rgba(13, 14, 16, 0.2);
+    transition: transform 0.22s ease, background-color 0.22s ease;
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .theme-switch-thumb,
+html.dark-theme body.page-ticket-monitoring .theme-switch-thumb {
+    background: #595c61;
+    transform: translateX(26px);
+}
+
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-theme-control,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-theme-control {
+    justify-content: center;
+    width: 58px;
+    margin-inline: auto;
+    padding: 9px 0;
+}
+
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-theme-label,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-theme-label {
+    display: none;
+}
+
+@media (max-width: 980px) {
+    body.page-system-monitoring:not(.page-print-summary) .app-sidebar,
+    body.page-ticket-monitoring .app-sidebar,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .app-sidebar,
+    html.sidebar-collapsed body.page-ticket-monitoring .app-sidebar {
+        overflow: hidden;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-theme-control,
+    body.page-ticket-monitoring .sidebar-theme-control,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-theme-control,
+    html.sidebar-collapsed body.page-ticket-monitoring .sidebar-theme-control {
+        justify-content: space-between;
+        width: 100%;
+        margin-inline: 0;
+        padding: 10px 12px;
+    }
+
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-theme-label,
+    html.sidebar-collapsed body.page-ticket-monitoring .sidebar-theme-label {
+        display: inline;
+    }
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker,
+body.page-ticket-monitoring .month-picker {
+    position: relative;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker input[type="hidden"],
+body.page-ticket-monitoring .month-picker input[type="hidden"] {
+    display: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker-trigger,
+body.page-ticket-monitoring .month-picker-trigger {
+    display: flex;
+    width: 100%;
+    min-height: 46px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 13px;
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    background: var(--surface-strong);
+    color: var(--text);
+    font-weight: 600;
+    text-align: left;
+    box-shadow: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker-trigger:hover,
+body.page-ticket-monitoring .month-picker-trigger:hover,
+body.page-system-monitoring:not(.page-print-summary) .month-picker-trigger[aria-expanded="true"],
+body.page-ticket-monitoring .month-picker-trigger[aria-expanded="true"] {
+    border-color: var(--brand);
+    background: var(--surface-strong);
+    transform: none;
+    box-shadow: 0 0 0 0.2rem var(--focus);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker-trigger svg,
+body.page-ticket-monitoring .month-picker-trigger svg,
+body.page-system-monitoring:not(.page-print-summary) .month-picker-popover svg,
+body.page-ticket-monitoring .month-picker-popover svg {
+    flex: 0 0 auto;
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker-trigger svg,
+body.page-ticket-monitoring .month-picker-trigger svg {
+    color: var(--brand-dark);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker-popover,
+body.page-ticket-monitoring .month-picker-popover {
+    position: absolute;
+    top: calc(100% + 9px);
+    left: 0;
+    z-index: 30;
+    width: min(320px, calc(100vw - 40px));
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: #ffffff;
+    color: #2d3035;
+    box-shadow: 0 22px 55px rgba(33, 35, 39, 0.18);
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .month-picker-popover,
+html.dark-theme body.page-ticket-monitoring .month-picker-popover {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: #22272f;
+    color: #f7f3ee;
+    box-shadow: 0 24px 62px rgba(0, 0, 0, 0.42);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker-popover[hidden],
+body.page-ticket-monitoring .month-picker-popover[hidden] {
+    display: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker-header,
+body.page-ticket-monitoring .month-picker-header {
+    display: grid;
+    grid-template-columns: 36px 1fr 36px;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker-header strong,
+body.page-ticket-monitoring .month-picker-header strong {
+    text-align: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker-year-button,
+body.page-ticket-monitoring .month-picker-year-button {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    border-radius: 11px;
+    background: #f3f4f6;
+    color: #5d626a;
+    box-shadow: none;
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .month-picker-year-button,
+html.dark-theme body.page-ticket-monitoring .month-picker-year-button {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-soft);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker-year-button:hover,
+body.page-ticket-monitoring .month-picker-year-button:hover {
+    background: var(--brand-soft);
+    color: var(--brand-dark);
+    transform: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker-grid,
+body.page-ticket-monitoring .month-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker-month,
+body.page-ticket-monitoring .month-picker-month {
+    min-height: 40px;
+    padding: 8px 6px;
+    border: 0;
+    border-radius: 11px;
+    background: transparent;
+    color: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker-month:hover,
+body.page-ticket-monitoring .month-picker-month:hover {
+    background: #f3f4f6;
+    transform: none;
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .month-picker-month:hover,
+html.dark-theme body.page-ticket-monitoring .month-picker-month:hover {
+    background: rgba(255, 255, 255, 0.07);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker-month[aria-pressed="true"],
+body.page-ticket-monitoring .month-picker-month[aria-pressed="true"] {
+    background: var(--brand);
+    color: #ffffff;
+    box-shadow: 0 8px 18px var(--focus);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker-footer,
+body.page-ticket-monitoring .month-picker-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 11px;
+    border-top: 1px solid var(--border);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker-footer-button,
+body.page-ticket-monitoring .month-picker-footer-button {
+    min-height: 34px;
+    padding: 7px 10px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-soft);
+    font-size: 0.72rem;
+    box-shadow: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker-footer-button:hover,
+body.page-ticket-monitoring .month-picker-footer-button:hover {
+    background: var(--brand-soft);
+    color: var(--brand-dark);
+    transform: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .month-picker-current,
+body.page-ticket-monitoring .month-picker-current {
+    color: var(--brand-dark);
+    font-weight: 700;
+}
+
+@media (max-width: 520px) {
+    body.page-system-monitoring:not(.page-print-summary) .month-picker-popover,
+    body.page-ticket-monitoring .month-picker-popover {
+        right: 0;
+        left: auto;
+        width: min(100%, 320px);
+    }
+}
+
+body.page-system-monitoring:not(.page-print-summary):not(:has(> .app-topbar)),
+body.page-ticket-monitoring:not(:has(> .app-topbar)) {
+    grid-template-rows: 1fr;
+    grid-template-areas: "sidebar main";
+}
+
+@media (max-width: 980px) {
+    body.page-system-monitoring:not(.page-print-summary):not(:has(> .app-topbar)),
+    body.page-ticket-monitoring:not(:has(> .app-topbar)) {
+        grid-template-areas:
+            "sidebar"
+            "main";
     }
 }
 

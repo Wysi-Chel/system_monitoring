@@ -10,6 +10,13 @@ $dashboardEscalationUrl = buildUrl("index.php", $listQueryParams, [
     "escalation" => 1,
     "page" => 1,
 ]) . "#summary-section";
+$dashboardCurrentMonth = (string) ($dashboardData["current_month"] ?? "");
+$dashboardMonthlyUrl = buildUrl("index.php", $listQueryParams, [
+    "month_from" => $dashboardCurrentMonth,
+    "month_to" => null,
+    "day" => null,
+    "page" => 1,
+]) . "#summary-section";
 
 $renderDashboardBreakdown = static function (array $items, string $emptyMessage): void {
     if ($items === []) {
@@ -61,6 +68,11 @@ $renderDashboardBreakdown = static function (array $items, string $emptyMessage)
             <div class="dashboard-metric-label">Total records</div>
             <div class="dashboard-metric-value"><?= e(number_format((int) ($dashboardMetrics["total_records"] ?? 0))) ?></div>
         </article>
+
+        <a href="<?= e($dashboardMonthlyUrl) ?>" class="dashboard-metric-card dashboard-metric-link dashboard-metric-monthly" title="<?= e((string) ($dashboardData["current_month_label"] ?? "Current month")) ?>">
+            <div class="dashboard-metric-label">Monthly records</div>
+            <div class="dashboard-metric-value"><?= e(number_format((int) ($dashboardMetrics["monthly_records"] ?? 0))) ?></div>
+        </a>
 
         <a href="<?= e($dashboardUserErrorUrl) ?>" class="dashboard-metric-card dashboard-metric-link dashboard-metric-correction">
             <div class="dashboard-metric-label">User error</div>

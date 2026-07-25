@@ -34,11 +34,18 @@ if (!isUserErrorMonitoringRecord($record)) {
 }
 
 $record = enrichMonitoringRecordsWithDataCorrectionActions($pdo, $tableNameSql, [$record])[0] ?? $record;
+$memoAction = normalizeMonitoringMemoAction((string) ($record["disciplinary_action"] ?? ""));
+if ($memoAction === "") {
+    http_response_code(403);
+    header("Content-Type: text/plain; charset=UTF-8");
+    echo "A memo action must be selected before printing.";
+    exit;
+}
+
 $filename = buildMemoFilename($company, $record);
 
 try {
     $docxPath = buildDraftMemoDocx($company, $record);
-    $memoAction = normalizeMonitoringMemoAction((string) ($record["disciplinary_action"] ?? ""));
     $recordId = (int) ($record["id"] ?? 0);
     if ($memoAction !== "" && $recordId > 0) {
         markMonitoringMemoPrinted($pdo, $tableNameSql, $recordId, $memoAction);

@@ -13,6 +13,10 @@ $tableNameSql = quoteMysqlIdentifier($company["table_name"]);
 $recordId = is_numeric($_POST["record_id"] ?? null) ? (int) $_POST["record_id"] : 0;
 $disciplinaryAction = trim((string) ($_POST["disciplinary_action"] ?? $_POST["action_taken"] ?? ""));
 $markMemoIssued = ($_POST["mark_memo_issued"] ?? "") === "1";
+$memoIssuedDate = trim((string) ($_POST["memo_issued_date"] ?? ""));
+$returnIdentificationNumber = normalizeIdentificationNumberFilter(
+    $_POST["return_identification_number"] ?? ""
+);
 $allowedActions = getMonitoringActionOptions();
 $doneStatus = getMonitoringDoneStatus();
 $incidentReportResolvedAction = getMonitoringIncidentReportResolvedAction();
@@ -81,6 +85,13 @@ if ($filterPage !== "" && $filterPage !== "1") {
     $redirectParams["page"] = $filterPage;
 }
 
+$redirectLocation = $returnIdentificationNumber !== ""
+    ? "monitoring_record.php?" . http_build_query([
+        "company" => $company["key"],
+        "identification_number" => $returnIdentificationNumber,
+    ]) . "#memo-issuance-history"
+    : "index.php?" . http_build_query($redirectParams) . "#summary-section";
+
 if ($recordId > 0 && ($disciplinaryAction !== "" || $markMemoIssued)) {
     $record = fetchMonitoringRecordById($pdo, $tableNameSql, $recordId);
 
@@ -90,17 +101,16 @@ if ($recordId > 0 && ($disciplinaryAction !== "" || $markMemoIssued)) {
         if (
             $markMemoIssued
             && isUserErrorMonitoringRecord($record)
-            && hasPrintedMonitoringMemo($record)
-            && in_array($recordMemoAction, ["Verbal Memo", "Written Memo"], true)
+            && in_array($recordMemoAction, ["Verbal Memo", "Written Memo", "Final Memo"], true)
             && getIssuedMonitoringMemoAction($record) === ""
         ) {
-            markMonitoringMemoIssued($pdo, $tableNameSql, $recordId);
-            header("Location: index.php?" . http_build_query($redirectParams) . "#summary-section");
+            markMonitoringMemoIssued($pdo, $tableNameSql, $recordId, $memoIssuedDate);
+            header("Location: " . $redirectLocation);
             exit;
         }
 
         if (isFinalMemoMonitoringRecord($record)) {
-            header("Location: index.php?" . http_build_query($redirectParams) . "#summary-section");
+            header("Location: " . $redirectLocation);
             exit;
         }
 
@@ -123,11 +133,25 @@ if ($recordId > 0 && ($disciplinaryAction !== "" || $markMemoIssued)) {
                 && in_array($disciplinaryAction, getAvailableMonitoringMemoActionOptions($enrichedRecord), true)
             ) {
                 updateMonitoringRecordActionTaken($pdo, $tableNameSql, $recordId, $disciplinaryAction);
+
+                if (
+                    uppercaseText($disciplinaryAction) === uppercaseText(getMonitoringIncidentReportOffense())
+                    && !containsMultiValueText((string) ($record["status"] ?? ""), "Pending")
+                ) {
+                    $statusValues = splitMultiValueText((string) ($record["status"] ?? ""));
+                    $statusValues[] = "Pending";
+                    updateMonitoringRecordStatus(
+                        $pdo,
+                        $tableNameSql,
+                        $recordId,
+                        implode(", ", array_values(array_unique($statusValues)))
+                    );
+                }
             }
         }
     }
 }
 
-header("Location: index.php?" . http_build_query($redirectParams) . "#summary-section");
+header("Location: " . $redirectLocation);
 exit;
 ?>

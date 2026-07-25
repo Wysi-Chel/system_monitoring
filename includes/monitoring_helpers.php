@@ -16,7 +16,9 @@ function iconSvg(string $name): string
     $paths = [
         "arrow-left" => '<path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path>',
         "arrow-right" => '<path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path>',
+        "calendar" => '<rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path>',
         "check" => '<path d="m20 6-11 11-5-5"></path>',
+        "chevrons-left" => '<path d="m11 17-5-5 5-5"></path><path d="m18 17-5-5 5-5"></path>',
         "download" => '<path d="M12 3v12"></path><path d="m7 10 5 5 5-5"></path><path d="M5 21h14"></path>',
         "edit" => '<path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>',
         "external-link" => '<path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>',
@@ -137,10 +139,7 @@ function getIssuedMonitoringMemoAction(array $row): string
         $issuedActionRank = $memoActionRank;
     }
 
-    if (
-        in_array($issuedAction, ["Verbal Memo", "Written Memo"], true)
-        && !hasConfirmedMonitoringMemoIssued($row)
-    ) {
+    if ($issuedAction !== "" && !hasConfirmedMonitoringMemoIssued($row)) {
         return "";
     }
 
@@ -181,18 +180,24 @@ function getAvailableMonitoringMemoActionOptions(array $row): array
         return [];
     }
 
-    $cycleIssuedAction = trim((string) ($row["memo_cycle_issued_action"] ?? ""));
+    $offenseCount = (int) ($row["data_correction_offense_count"] ?? 0);
+    $hasIncidentReportAttachment = trim((string) ($row["incident_report_image_path"] ?? "")) !== "";
 
-    return match ($cycleIssuedAction) {
-        "Final Memo" => [],
-        "Written Memo" => ["Final Memo"],
-        "Verbal Memo" => ["Written Memo", "Final Memo"],
-        default => getMonitoringActionOptions(),
-    };
+    if ($offenseCount === 1) {
+        return $hasIncidentReportAttachment ? [getMonitoringIncidentReportOffense()] : [];
+    }
+
+    return $offenseCount >= 2
+        ? ["Verbal Memo", "Written Memo", "Refresher Course"]
+        : [];
 }
 
 function resolveSuggestedMonitoringMemoAction(array $row, int $count): string
 {
+    if ($count !== 1) {
+        return "";
+    }
+
     $options = getAvailableMonitoringMemoActionOptions($row);
     if ($options !== []) {
         return $options[0];
@@ -207,6 +212,9 @@ function resolveMonitoringValidationErrorMessage(?string $errorCode): ?string
     return match (trim((string) $errorCode)) {
         "data_correction_user_required" => "USER IS REQUIRED WHEN CLASSIFICATION IS USER ERROR.",
         "user_error_user_required" => "USER IS REQUIRED WHEN CLASSIFICATION IS USER ERROR.",
+        "first_user_error_incident_report_required" => "AN INCIDENT REPORT ATTACHMENT IS REQUIRED FOR THE USER'S FIRST USER ERROR.",
+        "user_error_incident_report_required" => "AN INCIDENT REPORT ATTACHMENT IS REQUIRED FOR THE USER'S FIRST USER ERROR.",
+        "duplicate_user_incident_report_attachment" => "THIS INCIDENT REPORT ATTACHMENT WAS ALREADY USED FOR THE SAME USER. ATTACH A DIFFERENT FILE.",
         "incident_image_invalid_type" => "ONLY JPG, PNG, WEBP, OR GIF INCIDENT REPORT IMAGES ARE ALLOWED.",
         "incident_image_too_large" => "INCIDENT REPORT IMAGE MUST BE 5 MB OR SMALLER.",
         "incident_image_upload_failed" => "INCIDENT REPORT IMAGE COULD NOT BE UPLOADED.",
@@ -517,29 +525,28 @@ function resolveDataCorrectionDisciplinaryAction(int $count): array
 
     $alertMessage = "User Error Count: {$count}";
 
-    if ($count >= 5) {
+    if ($count === 1) {
         return [
-            "data_correction_alert" => $alertMessage . " - Final memo threshold",
-            "disciplinary_action" => "Final Memo",
-        ];
-    }
-
-    if ($count > 3) {
-        return [
-            "data_correction_alert" => $alertMessage . " - Written memo threshold",
-            "disciplinary_action" => "Written Memo",
+            "data_correction_alert" => $alertMessage . " - Incident report",
+            "disciplinary_action" => getMonitoringIncidentReportOffense(),
         ];
     }
 
     return [
-        "data_correction_alert" => $alertMessage . " - Verbal memo threshold",
-        "disciplinary_action" => "Verbal Memo",
+        "data_correction_alert" => $alertMessage . " - Choose action",
+        "disciplinary_action" => "",
     ];
 }
 
 function getMonitoringActionOptions(): array
 {
-    return ["Verbal Memo", "Written Memo", "Final Memo"];
+    return [
+        getMonitoringIncidentReportOffense(),
+        "Verbal Memo",
+        "Written Memo",
+        "Refresher Course",
+        "Final Memo",
+    ];
 }
 
 function getMonitoringIncidentReportOffense(): string
@@ -772,6 +779,7 @@ function buildMonitoringDashboardData(
     array $classificationOptions
 ): array {
     $totalRecords = count($records);
+    $currentMonth = (new DateTimeImmutable("now", new DateTimeZone("Asia/Manila")))->format("Y-m");
     $statusCounts = array_fill_keys($statusOptions, 0);
     $processedTypeCounts = array_fill_keys($processedTypeOptions, 0);
     $classificationCounts = [];
@@ -780,6 +788,7 @@ function buildMonitoringDashboardData(
     $dealerCounts = [];
     $metrics = [
         "total_records" => $totalRecords,
+        "monthly_records" => 0,
         "data_correction_records" => 0,
         "escalation_records" => 0,
         "linked_tickets" => 0,
@@ -792,6 +801,11 @@ function buildMonitoringDashboardData(
         $moduleValue = trim((string) ($row["module"] ?? ""));
         $branchValue = trim((string) ($row["branch"] ?? ""));
         $dealerValue = trim((string) ($row["dealer"] ?? ""));
+        $dateRecordedValue = trim((string) ($row["date_recorded"] ?? ""));
+
+        if (str_starts_with($dateRecordedValue, $currentMonth . "-")) {
+            $metrics["monthly_records"]++;
+        }
 
         foreach ($statusOptions as $option) {
             if (containsMultiValueText($statusValue, $option)) {
@@ -843,6 +857,8 @@ function buildMonitoringDashboardData(
 
     return [
         "metrics" => $metrics,
+        "current_month" => $currentMonth,
+        "current_month_label" => formatDisplayMonth($currentMonth),
         "status_breakdown" => buildDashboardBreakdownItems($statusCounts, $totalRecords),
         "processed_type_breakdown" => buildDashboardBreakdownItems($processedTypeCounts, $totalRecords),
         "classification_breakdown" => buildDashboardBreakdownItems($classificationCounts, $totalRecords),

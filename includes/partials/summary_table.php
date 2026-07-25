@@ -9,6 +9,65 @@ $formatCardValue = static function (string $value): string {
     $value = trim($value);
     return $value !== "" ? $value : "N/A";
 };
+$renderMonthPicker = static function (string $id, string $name, string $label, string $value): void {
+    $normalizedValue = normalizeMonthFilter($value);
+    $selectedDate = $normalizedValue !== ""
+        ? DateTimeImmutable::createFromFormat("!Y-m", $normalizedValue)
+        : false;
+    $currentDate = new DateTimeImmutable("now", new DateTimeZone("Asia/Manila"));
+    $displayYear = $selectedDate instanceof DateTimeImmutable
+        ? (int) $selectedDate->format("Y")
+        : (int) $currentDate->format("Y");
+    $displayLabel = $selectedDate instanceof DateTimeImmutable
+        ? $selectedDate->format("F Y")
+        : "Select month";
+    $monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    $popoverId = $id . "-popover";
+    ?>
+    <div class="field month-picker" data-month-picker data-display-year="<?= e($displayYear) ?>">
+        <label for="<?= e($id) ?>-trigger"><?= e($label) ?></label>
+        <input type="hidden" id="<?= e($id) ?>" name="<?= e($name) ?>" value="<?= e($normalizedValue) ?>" data-month-picker-input>
+        <button
+            type="button"
+            id="<?= e($id) ?>-trigger"
+            class="month-picker-trigger"
+            aria-haspopup="dialog"
+            aria-expanded="false"
+            aria-controls="<?= e($popoverId) ?>"
+            data-month-picker-trigger
+        >
+            <span data-month-picker-label><?= e($displayLabel) ?></span>
+            <?= iconSvg("calendar") ?>
+        </button>
+        <div class="month-picker-popover" id="<?= e($popoverId) ?>" role="dialog" aria-label="<?= e($label) ?>" data-month-picker-popover hidden>
+            <div class="month-picker-header">
+                <button type="button" class="month-picker-year-button" aria-label="Previous year" data-month-picker-previous>
+                    <?= iconSvg("arrow-left") ?>
+                </button>
+                <strong data-month-picker-year><?= e($displayYear) ?></strong>
+                <button type="button" class="month-picker-year-button" aria-label="Next year" data-month-picker-next>
+                    <?= iconSvg("arrow-right") ?>
+                </button>
+            </div>
+            <div class="month-picker-grid" role="group" aria-label="Months">
+                <?php foreach ($monthNames as $monthIndex => $monthName): ?>
+                <?php $monthValue = str_pad((string) ($monthIndex + 1), 2, "0", STR_PAD_LEFT); ?>
+                <button
+                    type="button"
+                    class="month-picker-month"
+                    data-month-picker-month="<?= e($monthValue) ?>"
+                    aria-pressed="<?= $selectedDate instanceof DateTimeImmutable && $selectedDate->format("m") === $monthValue ? "true" : "false" ?>"
+                ><?= e($monthName) ?></button>
+                <?php endforeach; ?>
+            </div>
+            <div class="month-picker-footer">
+                <button type="button" class="month-picker-footer-button" data-month-picker-clear>Clear</button>
+                <button type="button" class="month-picker-footer-button month-picker-current" data-month-picker-current>Current month</button>
+            </div>
+        </div>
+    </div>
+    <?php
+};
 ?>
 <section class="card" id="summary-section">
     <div class="summary-header">
@@ -37,14 +96,8 @@ $formatCardValue = static function (string $value): string {
         <?php endif; ?>
 
         <div class="summary-filter-grid">
-            <div class="field">
-                <label for="filter-month-from">Month</label>
-                <input type="month" id="filter-month-from" name="month_from" value="<?= e($filters["month_from"] ?? "") ?>">
-            </div>
-            <div class="field">
-                <label for="filter-month-to">Until (optional)</label>
-                <input type="month" id="filter-month-to" name="month_to" value="<?= e($filters["month_to"] ?? "") ?>">
-            </div>
+            <?php $renderMonthPicker("filter-month-from", "month_from", "Month From", (string) ($filters["month_from"] ?? "")); ?>
+            <?php $renderMonthPicker("filter-month-to", "month_to", "Month To", (string) ($filters["month_to"] ?? "")); ?>
             <div class="field">
                 <label for="filter-day">Day</label>
                 <input type="date" id="filter-day" name="day" value="<?= e($filters["day"] ?? "") ?>">
@@ -161,8 +214,6 @@ $formatCardValue = static function (string $value): string {
                 $row
             ));
             $identificationNumber = trim((string) ($row["identification_number"] ?? ""));
-            $isUserErrorClassification = isUserErrorMonitoringRecord($row);
-            $hasPrintedMemo = hasPrintedMonitoringMemo($row);
             $hasFinalMemo = isFinalMemoMonitoringRecord($row);
             $recordUrl = $identificationNumber !== ""
                 ? buildUrl("monitoring_record.php", $listQueryParams, ["identification_number" => $identificationNumber])
@@ -171,12 +222,6 @@ $formatCardValue = static function (string $value): string {
                 ? buildUrl("monitoring_record.php", $listQueryParams, [
                     "identification_number" => $identificationNumber,
                     "edit" => 1,
-                ])
-                : "";
-            $memoRecordUrl = $identificationNumber !== "" && $isUserErrorClassification && !$hasPrintedMemo
-                ? buildUrl("export_memo_docx.php", [
-                    "company" => $company["key"],
-                    "identification_number" => $identificationNumber,
                 ])
                 : "";
             $titleValue = trim((string) formatSummaryValue(["key" => "user_name", "format" => "text"], $row));
@@ -204,11 +249,6 @@ $formatCardValue = static function (string $value): string {
             $alertActionDisplayValue = $memoStatusDisplayValue !== "" ? $memoStatusDisplayValue : $offenseValue;
             $rowActionOptions = [];
             $hasIssuedMemo = getIssuedMonitoringMemoAction($row) !== "";
-            $memoAction = normalizeMonitoringMemoAction((string) ($row["disciplinary_action"] ?? ""));
-            $canMarkMemoIssued = $isUserErrorClassification
-                && $hasPrintedMemo
-                && !$hasIssuedMemo
-                && in_array($memoAction, ["Verbal Memo", "Written Memo"], true);
             $showIncidentReportResolveButton = !$hasFinalMemo && hasPendingMonitoringIncidentReportStatus($row);
 
             if (!$hasFinalMemo && !$hasIssuedMemo) {
@@ -216,7 +256,10 @@ $formatCardValue = static function (string $value): string {
                     $rowActionOptions[] = $monitoringDoneStatus;
                 }
 
-                if (!$hasPrintedMemo && ((int) ($row["data_correction_offense_count"] ?? 0)) >= 1) {
+                if (
+                    ((int) ($row["data_correction_offense_count"] ?? 0)) >= 2
+                    && trim((string) ($row["disciplinary_action"] ?? "")) === ""
+                ) {
                     foreach (getAvailableMonitoringMemoActionOptions($row) as $option) {
                         if (!in_array($option, $rowActionOptions, true)) {
                             $rowActionOptions[] = $option;
@@ -247,12 +290,6 @@ $formatCardValue = static function (string $value): string {
                         <span>Edit</span>
                     </a>
                     <?php endif; ?>
-                    <?php if ($memoRecordUrl !== ""): ?>
-                    <a href="<?= e($memoRecordUrl) ?>" class="button-link secondary icon-button summary-card-edit-link" data-memo-print-link aria-label="Print memo" title="Print memo">
-                        <?= iconSvg("file-text") ?>
-                        <span>Print memo</span>
-                    </a>
-                    <?php endif; ?>
                     <?php if ($showIncidentReportResolveButton): ?>
                     <form action="update_monitoring_action.php" method="POST" class="monitoring-action-form">
                         <input type="hidden" name="company" value="<?= e($company["key"]) ?>">
@@ -273,29 +310,6 @@ $formatCardValue = static function (string $value): string {
                         <button type="submit" class="secondary icon-button summary-card-edit-link" aria-label="Resolve incident report" title="Resolve incident report">
                             <?= iconSvg("check") ?>
                             <span>Resolve</span>
-                        </button>
-                    </form>
-                    <?php endif; ?>
-                    <?php if ($canMarkMemoIssued): ?>
-                    <form action="update_monitoring_action.php" method="POST" class="monitoring-action-form" data-memo-issued-confirm>
-                        <input type="hidden" name="company" value="<?= e($company["key"]) ?>">
-                        <input type="hidden" name="record_id" value="<?= e($row["id"] ?? "") ?>">
-                        <input type="hidden" name="mark_memo_issued" value="1">
-                        <input type="hidden" name="filter_month_from" value="<?= e($filters["month_from"] ?? "") ?>">
-                        <input type="hidden" name="filter_month_to" value="<?= e($filters["month_to"] ?? "") ?>">
-                        <input type="hidden" name="filter_day" value="<?= e($filters["day"] ?? "") ?>">
-                        <input type="hidden" name="filter_branch" value="<?= e($filters["branch"] ?? "") ?>">
-                        <input type="hidden" name="filter_dealer" value="<?= e($filters["dealer"] ?? "") ?>">
-                        <input type="hidden" name="filter_identification_number" value="<?= e($filters["identification_number"] ?? "") ?>">
-                        <input type="hidden" name="filter_user_name" value="<?= e($filters["user_name"] ?? "") ?>">
-                        <input type="hidden" name="filter_status" value="<?= e($filters["status"] ?? "") ?>">
-                        <input type="hidden" name="filter_action" value="<?= e($filters["disciplinary_action"] ?? "") ?>">
-                        <input type="hidden" name="filter_data_correction" value="<?= !empty($filters["data_correction_only"]) ? "1" : "" ?>">
-                        <input type="hidden" name="filter_escalation" value="<?= !empty($filters["escalation_only"]) ? "1" : "" ?>">
-                        <input type="hidden" name="filter_page" value="<?= e($pagination["page"]) ?>">
-                        <button type="submit" class="secondary icon-button summary-card-edit-link" aria-label="Mark memo as received and issued" title="Mark memo as received and issued">
-                            <?= iconSvg("send") ?>
-                            <span>Mark issued</span>
                         </button>
                     </form>
                     <?php endif; ?>

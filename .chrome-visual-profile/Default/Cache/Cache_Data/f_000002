@@ -262,13 +262,9 @@
         if (
             event.target
             && event.target.hasAttribute("data-memo-issued-confirm")
-            && !window.confirm("Confirm memo issuance for the selected date?")
+            && !window.confirm("Confirm that the user who committed the error has received this memo. Mark it as issued?")
         ) {
             event.preventDefault();
-            var memoIssuedCheckbox = event.target.querySelector('input[type="checkbox"]');
-            if (memoIssuedCheckbox) {
-                memoIssuedCheckbox.checked = false;
-            }
             return;
         }
 
@@ -356,19 +352,10 @@
         var ticketInput = document.getElementById("ticket");
         var ticketMonitoringLink = document.getElementById("ticket-monitoring-link");
         var userNameInput = document.getElementById("user-name");
-        var incidentReportInput = document.getElementById("incident-report-image");
         var offenseInput = document.getElementById("offense");
         var pendingStatusInput = recordForm.querySelector('input[name="status[]"][value="Pending"]');
         var classificationInputs = recordForm.querySelectorAll('input[name="classification"]');
         var userErrorMessage = "USER is required when CLASSIFICATION is USER ERROR.";
-        var incidentReportMessage = "An incident report attachment is required for this user's first User Error.";
-        var userErrorCounts = {};
-
-        try {
-            userErrorCounts = JSON.parse(recordForm.dataset.userErrorCounts || "{}");
-        } catch (error) {
-            userErrorCounts = {};
-        }
 
         applyUppercaseBehavior(recordUppercaseFields);
 
@@ -387,7 +374,7 @@
             updateIncidentReportStatus();
         }
 
-        if (classificationInputs.length > 0 && (userNameInput || incidentReportInput)) {
+        if (userNameInput && classificationInputs.length > 0) {
             var updateUserErrorValidation = function () {
                 var hasUserError = false;
 
@@ -401,44 +388,19 @@
                     }
                 }
 
-                if (userNameInput) {
-                    userNameInput.setCustomValidity(
-                        hasUserError && !userNameInput.value.trim() ? userErrorMessage : ""
-                    );
+                if (hasUserError && !userNameInput.value.trim()) {
+                    userNameInput.setCustomValidity(userErrorMessage);
+                    return;
                 }
 
-                if (incidentReportInput) {
-                    var hasExistingAttachment = incidentReportInput.dataset.hasExistingAttachment === "true";
-                    var normalizedUserName = userNameInput ? userNameInput.value.trim().toUpperCase() : "";
-                    var previousUserErrorCount = Number(userErrorCounts[normalizedUserName] || 0);
-                    if (
-                        normalizedUserName !== ""
-                        && normalizedUserName === recordForm.dataset.currentUserErrorName
-                    ) {
-                        previousUserErrorCount = Math.max(0, previousUserErrorCount - 1);
-                    }
-                    var isFirstUserError = hasUserError && previousUserErrorCount === 0;
-                    var attachmentIsRequired = isFirstUserError && !hasExistingAttachment;
-                    incidentReportInput.required = attachmentIsRequired;
-                    incidentReportInput.setAttribute("aria-required", attachmentIsRequired ? "true" : "false");
-                    incidentReportInput.setCustomValidity(
-                        attachmentIsRequired && incidentReportInput.files.length === 0
-                            ? incidentReportMessage
-                            : ""
-                    );
-                }
+                userNameInput.setCustomValidity("");
             };
 
             for (var classificationIndex = 0; classificationIndex < classificationInputs.length; classificationIndex += 1) {
                 classificationInputs[classificationIndex].addEventListener("change", updateUserErrorValidation);
             }
 
-            if (userNameInput) {
-                userNameInput.addEventListener("input", updateUserErrorValidation);
-            }
-            if (incidentReportInput) {
-                incidentReportInput.addEventListener("change", updateUserErrorValidation);
-            }
+            userNameInput.addEventListener("input", updateUserErrorValidation);
             recordForm.addEventListener("submit", updateUserErrorValidation);
             updateUserErrorValidation();
         }

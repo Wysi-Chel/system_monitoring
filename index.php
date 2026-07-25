@@ -28,6 +28,7 @@ $filterOptions = [
 
 $tableNameSql = quoteMysqlIdentifier($company["table_name"]);
 $userNameSuggestions = fetchMonitoringUserNameSuggestions($pdo, $tableNameSql);
+$userErrorCountsByUser = fetchMonitoringUserErrorCountsByUser($pdo, $tableNameSql);
 $filters = buildMonitoringFilters($_GET, $company, $filterOptions);
 
 if (!empty($filters["escalation_only"]) || ($filters["disciplinary_action"] ?? "") !== "") {

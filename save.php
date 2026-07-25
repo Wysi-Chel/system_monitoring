@@ -4,6 +4,7 @@ requireMonitoringAuthentication();
 require "config.php";
 require __DIR__ . "/includes/monitoring_options.php";
 require __DIR__ . "/includes/monitoring_helpers.php";
+require __DIR__ . "/includes/monitoring_repository.php";
 
 $company = resolveCompanyConfig($_POST["company"] ?? $_GET["company"] ?? null, $companyConfigs);
 ensureMonitoringTable($pdo, $company);
@@ -324,16 +325,81 @@ $identificationNumber = $prefilledIdentificationNumber !== ""
     ? $prefilledIdentificationNumber
     : getNextMonitoringIdentificationNumber($pdo, $company);
 
-if (
-    mb_strtoupper($normalizedText["classification"], 'UTF-8') === mb_strtoupper("User Error", 'UTF-8')
-    && $normalizedText["user_name"] === ""
-) {
+$isUserErrorClassification = mb_strtoupper($normalizedText["classification"], 'UTF-8')
+    === mb_strtoupper("User Error", 'UTF-8');
+
+if ($isUserErrorClassification && $normalizedText["user_name"] === "") {
     if ($isEditingRecord) {
         redirectToMonitoringRecordWithError($company, $identificationNumber, "user_error_user_required");
     }
 
     redirectToMonitoringFormWithError($company, "user_error_user_required");
 }
+
+$existingIncidentReportPath = trim((string) ($existingRecord["incident_report_image_path"] ?? ""));
+$isFirstUserError = $isUserErrorClassification
+    && countMonitoringUserErrorRecordsForUser(
+        $pdo,
+        $tableNameSql,
+        $normalizedText["user_name"],
+        $isEditingRecord ? $editRecordId : 0
+    ) === 0;
+
+if ($isFirstUserError && $incidentReportUpload === null && $existingIncidentReportPath === "") {
+    if ($isEditingRecord) {
+        redirectToMonitoringRecordWithError(
+            $company,
+            $identificationNumber,
+            "first_user_error_incident_report_required"
+        );
+    }
+
+    redirectToMonitoringFormWithError($company, "first_user_error_incident_report_required");
+}
+
+if ($isUserErrorClassification && $incidentReportUpload !== null) {
+    $uploadedIncidentReportHash = hash_file("sha256", $incidentReportUpload["temporary_path"]);
+    if (!is_string($uploadedIncidentReportHash) || $uploadedIncidentReportHash === "") {
+        redirectToMonitoringFormWithError($company, "incident_image_upload_failed");
+    }
+
+    $existingIncidentReportPaths = fetchMonitoringIncidentReportPathsForUser(
+        $pdo,
+        $tableNameSql,
+        $normalizedText["user_name"],
+        $isEditingRecord ? $editRecordId : 0
+    );
+
+    foreach ($existingIncidentReportPaths as $existingPath) {
+        $existingAbsolutePath = getMonitoringStoredFileAbsolutePath($existingPath);
+        if (!is_file($existingAbsolutePath)) {
+            continue;
+        }
+
+        $existingIncidentReportHash = hash_file("sha256", $existingAbsolutePath);
+        if (is_string($existingIncidentReportHash) && hash_equals($existingIncidentReportHash, $uploadedIncidentReportHash)) {
+            if ($isEditingRecord) {
+                redirectToMonitoringRecordWithError(
+                    $company,
+                    $identificationNumber,
+                    "duplicate_user_incident_report_attachment"
+                );
+            }
+
+            redirectToMonitoringFormWithError($company, "duplicate_user_incident_report_attachment");
+        }
+    }
+}
+
+if ($isFirstUserError) {
+    $normalizedText["offense"] = getMonitoringIncidentReportOffense();
+    if (!containsMultiValueText($normalizedText["status"], "Pending")) {
+        $statusValues = splitMultiValueText($normalizedText["status"]);
+        $statusValues[] = "Pending";
+        $normalizedText["status"] = implode(", ", $statusValues);
+    }
+}
+
 $storedIncidentReportRelativePath = null;
 $storedIncidentReportAbsolutePath = null;
 

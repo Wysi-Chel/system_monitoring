@@ -12,6 +12,7 @@ $showBranchSelector = $fixedBranch === null;
 ensureMonitoringTable($pdo, $company);
 $tableNameSql = quoteMysqlIdentifier($company["table_name"]);
 $userNameSuggestions = fetchMonitoringUserNameSuggestions($pdo, $tableNameSql);
+$userErrorCountsByUser = fetchMonitoringUserErrorCountsByUser($pdo, $tableNameSql);
 
 $filterOptions = [
     "branch" => $branchOptions,
@@ -80,6 +81,11 @@ if ($record !== null && $recordUserName !== "") {
         "user" => $recordUserName,
     ]) . "#summary-section";
 }
+$memoIssuanceRecords = array_values(array_filter(
+    $userTransactionRecords,
+    static fn (array $historyRow): bool => isUserErrorMonitoringRecord($historyRow)
+        && normalizeMonitoringMemoAction((string) ($historyRow["disciplinary_action"] ?? "")) !== ""
+));
 
 $incidentReportImagePath = trim((string) ($record["incident_report_image_path"] ?? ""));
 $incidentReportImageAbsolutePath = $incidentReportImagePath !== ""
@@ -92,15 +98,20 @@ $recordEditUrl = $record !== null
 $recordViewUrl = $record !== null
     ? buildUrl("monitoring_record.php", $recordPageQueryParams, ["edit" => null])
     : "";
-$recordMemoReprintUrl = $record !== null
+$recordHasPrintedMemo = $record !== null && hasPrintedMonitoringMemo($record);
+$recordMemoAction = $record !== null
+    ? normalizeMonitoringMemoAction((string) ($record["disciplinary_action"] ?? ""))
+    : "";
+$recordMemoUrl = $record !== null
     && isUserErrorMonitoringRecord($record)
-    && hasPrintedMonitoringMemo($record)
+    && $recordMemoAction !== ""
     ? buildUrl("export_memo_docx.php", [
         "company" => $company["key"],
         "identification_number" => $identificationNumber,
-        "reprint" => 1,
+        "reprint" => $recordHasPrintedMemo ? 1 : null,
     ])
     : "";
+$recordMemoLabel = $recordHasPrintedMemo ? "Reprint memo" : "Print memo";
 $isResolvedIncidentReport = $record !== null && hasResolvedMonitoringIncidentReportStatus($record);
 $savedTitle = "Record Updated";
 $savedMessage = $identificationNumber !== ""
@@ -141,12 +152,6 @@ function renderMonitoringReadonlyField(string $label, string $value, string $fie
 
 <main>
     <section class="card">
-        <div class="summary-header">
-            <div>
-                <h2>Find Record</h2>
-                <p class="note">Search using the ID number generated when the incident was encoded.</p>
-            </div>
-        </div>
 
         <form action="monitoring_record.php" method="GET" class="summary-filter-form">
             <input type="hidden" name="company" value="<?= e($company["key"]) ?>">
@@ -203,10 +208,10 @@ function renderMonitoringReadonlyField(string $label, string $value, string $fie
                 <p class="note">Full incident details for ID number <strong><?= e($identificationNumber) ?></strong>.</p>
             </div>
             <div class="summary-actions">
-                <?php if (!$isEditMode && $recordMemoReprintUrl !== ""): ?>
-                <a href="<?= e($recordMemoReprintUrl) ?>" class="button-link secondary icon-button" data-memo-print-link aria-label="Reprint memo" title="Reprint memo">
+                <?php if (!$isEditMode && $recordMemoUrl !== ""): ?>
+                <a href="<?= e($recordMemoUrl) ?>" class="button-link secondary icon-button" data-memo-print-link aria-label="<?= e($recordMemoLabel) ?>" title="<?= e($recordMemoLabel) ?>">
                     <?= iconSvg("printer") ?>
-                    <span class="sr-only">Reprint memo</span>
+                    <span class="sr-only"><?= e($recordMemoLabel) ?></span>
                 </a>
                 <?php endif; ?>
                 <?php if ($isEditMode): ?>
@@ -282,13 +287,13 @@ function renderMonitoringReadonlyField(string $label, string $value, string $fie
                             ?: formatMonitoringDetailDisplayValue(["key" => "disciplinary_action", "format" => "text"], $record),
                         "field-span-2"
                     ); ?>
-                    <?php renderMonitoringReadonlyField("Memo printed", formatMonitoringDetailDisplayValue(["key" => "memo_printed_at", "format" => "timestamp"], $record)); ?>
-                    <?php renderMonitoringReadonlyField("Encoded at", formatMonitoringDetailDisplayValue(["key" => "created_at", "format" => "timestamp"], $record), "field-span-2"); ?>
                 </div>
             </section>
         </div>
         <?php endif; ?>
     </section>
+
+    <?php require __DIR__ . "/includes/partials/memo_issuance_history.php"; ?>
 
     <section class="card">
         <div class="summary-header">
@@ -331,8 +336,6 @@ function renderMonitoringReadonlyField(string $label, string $value, string $fie
                         <th>Status</th>
                         <th>User Error Count</th>
                         <th>Alert</th>
-                        <th>Memo Status</th>
-                        <th>Print History</th>
                         <th>View</th>
                     </tr>
                 </thead>
@@ -350,7 +353,6 @@ function renderMonitoringReadonlyField(string $label, string $value, string $fie
                         $isCurrentRecord = $historyRecordId === (int) ($record["id"] ?? 0);
                         $historyUserErrorCount = (int) ($historyRow["data_correction_offense_count"] ?? 0);
                         $historyAlertValue = trim((string) ($historyRow["data_correction_alert"] ?? ""));
-                        $historyMemoStatus = formatMonitoringMemoActionStatusDisplayValue($historyRow);
                         ?>
                     <tr<?= $isCurrentRecord ? ' class="record-history-current-row"' : "" ?>>
                         <td><?= e(formatMonitoringDetailDisplayValue(["key" => "date_recorded", "format" => "date"], $historyRow)) ?></td>
@@ -370,8 +372,6 @@ function renderMonitoringReadonlyField(string $label, string $value, string $fie
                         <td><?= e(formatMonitoringDetailDisplayValue(["key" => "status", "format" => "text"], $historyRow)) ?></td>
                         <td><?= e($historyUserErrorCount > 0 ? (string) $historyUserErrorCount : "N/A") ?></td>
                         <td><?= e($historyAlertValue !== "" ? uppercaseText($historyAlertValue) : "N/A") ?></td>
-                        <td><?= e($historyMemoStatus !== "" ? uppercaseText($historyMemoStatus) : "N/A") ?></td>
-                        <td><?= e(formatMonitoringDetailDisplayValue(["key" => "memo_printed_at", "format" => "timestamp"], $historyRow)) ?></td>
                         <td class="record-history-view-cell">
                             <?php if ($isCurrentRecord): ?>
                             <span class="record-history-current-label">Watching</span>

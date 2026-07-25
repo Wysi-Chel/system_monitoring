@@ -474,10 +474,6 @@ function fetchDataCorrectionOffenseStatesByRecordId(PDO $pdo, string $tableNameS
             $issuedActionsByUser[$userKey] = $currentIssuedAction;
         }
 
-        if ($currentIssuedAction === "Final Memo") {
-            $offenseCountsByUser[$userKey] = 0;
-            $issuedActionsByUser[$userKey] = "";
-        }
     }
 
     return $offenseStatesByRecordId;
@@ -563,11 +559,19 @@ function enrichMonitoringRecordsWithDataCorrectionActions(PDO $pdo, string $tabl
         }
 
         $resolvedAction = resolveDataCorrectionDisciplinaryAction($offenseCount);
+        $isMissingFirstIncidentReport = $offenseCount === 1
+            && trim((string) ($row["incident_report_image_path"] ?? "")) === "";
+        if ($isMissingFirstIncidentReport) {
+            $resolvedAction = [
+                "data_correction_alert" => "User Error Count: 1 - Incident report attachment required",
+                "disciplinary_action" => "",
+            ];
+        }
         $row["data_correction_offense_count"] = $offenseCount;
         $row["data_correction_alert"] = (string) ($resolvedAction["data_correction_alert"] ?? $offenseCount);
         $row["memo_cycle_issued_action"] = (string) ($offenseState["memo_cycle_issued_action"] ?? "");
 
-        if ($row["disciplinary_action"] === "") {
+        if ($row["disciplinary_action"] === "" && !$isMissingFirstIncidentReport) {
             $suggestedAction = resolveSuggestedMonitoringMemoAction($row, $offenseCount);
             if ($suggestedAction !== "") {
                 $row["disciplinary_action"] = $suggestedAction;
@@ -628,6 +632,97 @@ function fetchMonitoringRecordsByUserName(
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
+function countMonitoringUserErrorRecordsForUser(
+    PDO $pdo,
+    string $tableNameSql,
+    string $userName,
+    int $excludeRecordId = 0
+): int {
+    $normalizedUserName = trim($userName);
+    if ($normalizedUserName === "") {
+        return 0;
+    }
+
+    $sql = "SELECT COUNT(*)
+            FROM {$tableNameSql}
+            WHERE UPPER(TRIM(COALESCE(user_name, ''))) = :user_name
+              AND UPPER(TRIM(COALESCE(classification, ''))) = :classification";
+
+    if ($excludeRecordId > 0) {
+        $sql .= " AND id <> :exclude_record_id";
+    }
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(":user_name", uppercaseText($normalizedUserName), PDO::PARAM_STR);
+    $stmt->bindValue(":classification", uppercaseText("User Error"), PDO::PARAM_STR);
+    if ($excludeRecordId > 0) {
+        $stmt->bindValue(":exclude_record_id", $excludeRecordId, PDO::PARAM_INT);
+    }
+    $stmt->execute();
+
+    return (int) $stmt->fetchColumn();
+}
+
+function fetchMonitoringUserErrorCountsByUser(PDO $pdo, string $tableNameSql): array
+{
+    $stmt = $pdo->prepare(
+        "SELECT UPPER(TRIM(user_name)) AS user_key, COUNT(*) AS error_count
+         FROM {$tableNameSql}
+         WHERE COALESCE(TRIM(user_name), '') <> ''
+           AND UPPER(TRIM(COALESCE(classification, ''))) = :classification
+         GROUP BY UPPER(TRIM(user_name))"
+    );
+    $stmt->bindValue(":classification", uppercaseText("User Error"), PDO::PARAM_STR);
+    $stmt->execute();
+
+    $counts = [];
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $userKey = trim((string) ($row["user_key"] ?? ""));
+        if ($userKey !== "") {
+            $counts[$userKey] = (int) ($row["error_count"] ?? 0);
+        }
+    }
+
+    return $counts;
+}
+
+function fetchMonitoringIncidentReportPathsForUser(
+    PDO $pdo,
+    string $tableNameSql,
+    string $userName,
+    int $excludeRecordId = 0
+): array {
+    $normalizedUserName = trim($userName);
+    if ($normalizedUserName === "") {
+        return [];
+    }
+
+    $sql = "SELECT incident_report_image_path
+            FROM {$tableNameSql}
+            WHERE UPPER(TRIM(COALESCE(user_name, ''))) = :user_name
+              AND UPPER(TRIM(COALESCE(classification, ''))) = :classification
+              AND TRIM(COALESCE(incident_report_image_path, '')) <> ''";
+
+    if ($excludeRecordId > 0) {
+        $sql .= " AND id <> :exclude_record_id";
+    }
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(":user_name", uppercaseText($normalizedUserName), PDO::PARAM_STR);
+    $stmt->bindValue(":classification", uppercaseText("User Error"), PDO::PARAM_STR);
+    if ($excludeRecordId > 0) {
+        $stmt->bindValue(":exclude_record_id", $excludeRecordId, PDO::PARAM_INT);
+    }
+    $stmt->execute();
+
+    $paths = array_map(
+        static fn (mixed $path): string => trim((string) $path),
+        $stmt->fetchAll(PDO::FETCH_COLUMN)
+    );
+
+    return array_values(array_unique(array_filter($paths, static fn (string $path): bool => $path !== "")));
+}
+
 function updateMonitoringRecordActionTaken(PDO $pdo, string $tableNameSql, int $id, string $actionTaken): void
 {
     $stmt = $pdo->prepare(
@@ -664,18 +759,33 @@ function markMonitoringMemoPrinted(PDO $pdo, string $tableNameSql, int $id, stri
     $stmt->execute();
 }
 
-function markMonitoringMemoIssued(PDO $pdo, string $tableNameSql, int $id): bool
+function markMonitoringMemoIssued(
+    PDO $pdo,
+    string $tableNameSql,
+    int $id,
+    ?string $issuedDate = null
+): bool
 {
     if ($id <= 0) {
         return false;
     }
 
-    $issuedAt = (new DateTimeImmutable("now", new DateTimeZone("Asia/Manila")))->format("Y-m-d H:i:s");
+    $timezone = new DateTimeZone("Asia/Manila");
+    $now = new DateTimeImmutable("now", $timezone);
+    $normalizedIssuedDate = trim((string) $issuedDate);
+    $parsedIssuedDate = $normalizedIssuedDate !== ""
+        ? DateTimeImmutable::createFromFormat("!Y-m-d", $normalizedIssuedDate, $timezone)
+        : false;
+    $issuedAt = $parsedIssuedDate instanceof DateTimeImmutable
+        && $parsedIssuedDate->format("Y-m-d") === $normalizedIssuedDate
+        && $parsedIssuedDate <= $now
+        ? $normalizedIssuedDate . " " . $now->format("H:i:s")
+        : $now->format("Y-m-d H:i:s");
+
     $stmt = $pdo->prepare(
         "UPDATE {$tableNameSql}
          SET memo_issued_at = COALESCE(memo_issued_at, :issued_at)
-         WHERE id = :id
-           AND memo_printed_at IS NOT NULL"
+         WHERE id = :id"
     );
     $stmt->bindValue(":issued_at", $issuedAt, PDO::PARAM_STR);
     $stmt->bindValue(":id", $id, PDO::PARAM_INT);

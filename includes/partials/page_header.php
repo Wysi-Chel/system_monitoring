@@ -40,27 +40,49 @@ $navItems = [
     ],
 ];
 ?>
-<aside class="app-sidebar">
-
+<aside class="app-sidebar" id="app-sidebar">
+    <div class="sidebar-header">
+        <a href="<?= e($monitoringHomeUrl) ?>" class="sidebar-brand" aria-label="<?= e($company["system_name"]) ?> home">
+            <span class="sidebar-brand-mark">
+                <img src="<?= e($company["logo_path"]) ?>" alt="">
+            </span>
+            <span class="sidebar-brand-copy">
+                <span class="brand-kicker"><?= e($company["company_name"]) ?></span>
+                <strong class="brand-title">System Monitoring</strong>
+            </span>
+        </a>
+    </div>
 
     <?php if ($showCompanySwitch): ?>
-    <section class="sidebar-panel">
+
+    <section class="sidebar-panel sidebar-company-panel">
         <div class="sidebar-panel-label">Company Workspace</div>
         <div class="company-switch" aria-label="Switch company">
-            <a href="<?= e($mitsubishiUrl) ?>" class="switch-link<?= $company["key"] === "mitsubishi" ? " active" : "" ?>"<?= $company["key"] === "mitsubishi" ? ' aria-current="page"' : "" ?>>Mitsubishi</a>
-            <a href="<?= e($hyundaiUrl) ?>" class="switch-link<?= $company["key"] === "hyundai" ? " active" : "" ?>"<?= $company["key"] === "hyundai" ? ' aria-current="page"' : "" ?>>Hyundai</a>
+            <a href="<?= e($mitsubishiUrl) ?>" class="switch-link<?= $company["key"] === "mitsubishi" ? " active" : "" ?>" title="Mitsubishi"<?= $company["key"] === "mitsubishi" ? ' aria-current="page"' : "" ?>>
+                <span class="switch-link-label">Mitsubishi</span>
+                <span class="switch-link-short" aria-hidden="true">M</span>
+            </a>
+            <a href="<?= e($hyundaiUrl) ?>" class="switch-link<?= $company["key"] === "hyundai" ? " active" : "" ?>" title="Hyundai"<?= $company["key"] === "hyundai" ? ' aria-current="page"' : "" ?>>
+                <span class="switch-link-label">Hyundai</span>
+                <span class="switch-link-short" aria-hidden="true">H</span>
+            </a>
         </div>
     </section>
     <?php endif; ?>
 
-    <section class="sidebar-panel">
+    <section class="sidebar-panel sidebar-workspace-panel">
         <div class="sidebar-panel-label">Workspace</div>
         <nav class="sidebar-nav" aria-label="Primary navigation">
             <?php foreach ($navItems as $item): ?>
                 <?php if (array_key_exists("visible", $item) && !$item["visible"]): ?>
                     <?php continue; ?>
                 <?php endif; ?>
-                <a href="<?= e($item["href"]) ?>" class="sidebar-link<?= $currentScript === $item["script"] ? " active" : "" ?>">
+                <a
+                    href="<?= e($item["href"]) ?>"
+                    class="sidebar-link<?= $currentScript === $item["script"] ? " active" : "" ?>"
+                    title="<?= e($item["label"]) ?>"
+                    <?= $currentScript === $item["script"] ? 'aria-current="page"' : "" ?>
+                >
                     <?= iconSvg((string) ($item["icon"] ?? "home")) ?>
                     <span><?= e($item["label"]) ?></span>
                 </a>
@@ -70,50 +92,55 @@ $navItems = [
 
     <section class="sidebar-action">
         <div class="sidebar-panel-label">Quick Action</div>
-        <a href="<?= e($encodeRecordUrl) ?>" class="button-link button-with-icon primary">
+        <a href="<?= e($encodeRecordUrl) ?>" class="button-link button-with-icon primary sidebar-primary-action" title="Encode new record">
             <?= iconSvg("plus") ?>
             <span>Encode New Record</span>
         </a>
-        <a href="<?= e($summaryUrl) ?>" class="button-link button-with-icon secondary">
+        <a href="<?= e($summaryUrl) ?>" class="button-link button-with-icon secondary sidebar-secondary-action" title="Open summary">
             <?= iconSvg("file-text") ?>
             <span>Open Summary</span>
         </a>
     </section>
 
     <div class="sidebar-footer">
-       
+        <div class="sidebar-theme-control">
+            <span class="sidebar-theme-label">Appearance</span>
+            <button type="button" class="theme-toggle theme-switch" id="theme-toggle" aria-pressed="false" aria-label="Switch to dark mode" title="Switch to dark mode">
+                <span class="theme-switch-icon theme-switch-sun"><?= iconSvg("sun") ?></span>
+                <span class="theme-switch-icon theme-switch-moon"><?= iconSvg("moon") ?></span>
+                <span class="theme-switch-thumb" aria-hidden="true"></span>
+                <span class="sr-only">Switch theme</span>
+            </button>
+        </div>
         <div class="sidebar-note">
-            <span>Today</span>
-            <strong><?= e($todayDisplay) ?></strong>
+            <span class="sidebar-note-icon"><?= iconSvg("calendar") ?></span>
+            <span class="sidebar-note-copy">
+                <span>Today</span>
+                <strong><?= e($todayDisplay) ?></strong>
+            </span>
         </div>
     </div>
+
+    <button
+        type="button"
+        class="sidebar-toggle"
+        id="sidebar-toggle"
+        aria-controls="app-sidebar"
+        aria-expanded="true"
+        aria-label="Collapse sidebar"
+        title="Collapse sidebar"
+    >
+        <?= iconSvg("chevrons-left") ?>
+    </button>
 </aside>
 
+<?php if (canAccessPromoteToLiveUi()): ?>
 <header class="app-topbar">
-    <div class="topbar-copy">
-        <p class="eyebrow"><?= e($headerKicker) ?></p>
-        <h1 class="page-title"><?= e($headerTitle) ?></h1>
-        <?php if ($headerDescription !== ""): ?>
-        <p class="page-description"><?= e($headerDescription) ?></p>
-        <?php endif; ?>
-        <div class="topbar-badges">
-            <span class="info-pill"><?= e($company["company_name"]) ?> Workspace</span>
-            <?php if (isApplicationTestEnvironment()): ?>
-            <span class="info-pill info-pill-muted"><?= e($appEnvironmentLabel) ?></span>
-            <?php endif; ?>
-        </div>
-    </div>
-
     <div class="topbar-meta">
-        <?php if (canAccessPromoteToLiveUi()): ?>
         <a href="<?= e($promotionUrl) ?>" class="button-link secondary topbar-inline-action icon-button" aria-label="Promote to live" title="Promote to live">
             <?= iconSvg("upload") ?>
             <span class="sr-only">Promote to live</span>
         </a>
-        <?php endif; ?>
-        <button type="button" class="theme-toggle icon-button" id="theme-toggle" aria-pressed="false" aria-label="Switch to dark mode" title="Switch to dark mode">
-            <?= iconSvg("moon") ?>
-            <span class="sr-only">Switch theme</span>
-        </button>
     </div>
 </header>
+<?php endif; ?>
