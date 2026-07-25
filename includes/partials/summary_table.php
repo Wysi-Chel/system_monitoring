@@ -38,8 +38,12 @@ $formatCardValue = static function (string $value): string {
 
         <div class="summary-filter-grid">
             <div class="field">
-                <label for="filter-month">Month</label>
-                <input type="month" id="filter-month" name="month" value="<?= e($filters["month"] ?? "") ?>">
+                <label for="filter-month-from">Month</label>
+                <input type="month" id="filter-month-from" name="month_from" value="<?= e($filters["month_from"] ?? "") ?>">
+            </div>
+            <div class="field">
+                <label for="filter-month-to">Until (optional)</label>
+                <input type="month" id="filter-month-to" name="month_to" value="<?= e($filters["month_to"] ?? "") ?>">
             </div>
             <div class="field">
                 <label for="filter-day">Day</label>
@@ -254,7 +258,8 @@ $formatCardValue = static function (string $value): string {
                         <input type="hidden" name="company" value="<?= e($company["key"]) ?>">
                         <input type="hidden" name="record_id" value="<?= e($row["id"] ?? "") ?>">
                         <input type="hidden" name="disciplinary_action" value="<?= e($monitoringIncidentReportResolvedAction) ?>">
-                        <input type="hidden" name="filter_month" value="<?= e($filters["month"] ?? "") ?>">
+                        <input type="hidden" name="filter_month_from" value="<?= e($filters["month_from"] ?? "") ?>">
+                        <input type="hidden" name="filter_month_to" value="<?= e($filters["month_to"] ?? "") ?>">
                         <input type="hidden" name="filter_day" value="<?= e($filters["day"] ?? "") ?>">
                         <input type="hidden" name="filter_branch" value="<?= e($filters["branch"] ?? "") ?>">
                         <input type="hidden" name="filter_dealer" value="<?= e($filters["dealer"] ?? "") ?>">
@@ -276,7 +281,8 @@ $formatCardValue = static function (string $value): string {
                         <input type="hidden" name="company" value="<?= e($company["key"]) ?>">
                         <input type="hidden" name="record_id" value="<?= e($row["id"] ?? "") ?>">
                         <input type="hidden" name="mark_memo_issued" value="1">
-                        <input type="hidden" name="filter_month" value="<?= e($filters["month"] ?? "") ?>">
+                        <input type="hidden" name="filter_month_from" value="<?= e($filters["month_from"] ?? "") ?>">
+                        <input type="hidden" name="filter_month_to" value="<?= e($filters["month_to"] ?? "") ?>">
                         <input type="hidden" name="filter_day" value="<?= e($filters["day"] ?? "") ?>">
                         <input type="hidden" name="filter_branch" value="<?= e($filters["branch"] ?? "") ?>">
                         <input type="hidden" name="filter_dealer" value="<?= e($filters["dealer"] ?? "") ?>">
@@ -297,7 +303,8 @@ $formatCardValue = static function (string $value): string {
                     <form action="update_monitoring_action.php" method="POST" class="monitoring-action-form">
                         <input type="hidden" name="company" value="<?= e($company["key"]) ?>">
                         <input type="hidden" name="record_id" value="<?= e($row["id"] ?? "") ?>">
-                        <input type="hidden" name="filter_month" value="<?= e($filters["month"] ?? "") ?>">
+                        <input type="hidden" name="filter_month_from" value="<?= e($filters["month_from"] ?? "") ?>">
+                        <input type="hidden" name="filter_month_to" value="<?= e($filters["month_to"] ?? "") ?>">
                         <input type="hidden" name="filter_day" value="<?= e($filters["day"] ?? "") ?>">
                         <input type="hidden" name="filter_branch" value="<?= e($filters["branch"] ?? "") ?>">
                         <input type="hidden" name="filter_dealer" value="<?= e($filters["dealer"] ?? "") ?>">

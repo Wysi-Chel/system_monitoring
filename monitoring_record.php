@@ -150,7 +150,8 @@ function renderMonitoringReadonlyField(string $label, string $value, string $fie
 
         <form action="monitoring_record.php" method="GET" class="summary-filter-form">
             <input type="hidden" name="company" value="<?= e($company["key"]) ?>">
-            <input type="hidden" name="month" value="<?= e($filters["month"] ?? "") ?>">
+            <input type="hidden" name="month_from" value="<?= e($filters["month_from"] ?? "") ?>">
+            <input type="hidden" name="month_to" value="<?= e($filters["month_to"] ?? "") ?>">
             <input type="hidden" name="day" value="<?= e($filters["day"] ?? "") ?>">
             <input type="hidden" name="branch" value="<?= e($filters["branch"] ?? "") ?>">
             <input type="hidden" name="dealer" value="<?= e($filters["dealer"] ?? "") ?>">

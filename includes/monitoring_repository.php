@@ -72,20 +72,22 @@ function escapeLikeTerm(string $value): string
 
 function buildMonitoringFilters(array $input, array $company, array $filterOptions): array
 {
-    $dateFrom = normalizeDateFilter($input["date_from"] ?? "");
-    $dateTo = normalizeDateFilter($input["date_to"] ?? "");
+    $legacyMonth = normalizeMonthFilter($input["month"] ?? "");
+    $monthFrom = normalizeMonthFilter($input["month_from"] ?? $legacyMonth);
+    $monthTo = normalizeMonthFilter($input["month_to"] ?? $legacyMonth);
     $allowedPerPage = $filterOptions["per_page"] ?? [];
     $defaultPerPage = $allowedPerPage[0] ?? 25;
 
-    if ($dateFrom !== "" && $dateTo !== "" && $dateFrom > $dateTo) {
-        [$dateFrom, $dateTo] = [$dateTo, $dateFrom];
+    if ($monthFrom !== "" && $monthTo !== "" && $monthFrom > $monthTo) {
+        [$monthFrom, $monthTo] = [$monthTo, $monthFrom];
     }
 
     $filters = [
         "search" => "",
         "identification_number" => normalizeIdentificationNumberFilter($input["id_number"] ?? ""),
         "user_name" => normalizeSearchFilter($input["user"] ?? $input["user_name"] ?? ""),
-        "month" => normalizeMonthFilter($input["month"] ?? ""),
+        "month_from" => $monthFrom,
+        "month_to" => $monthTo,
         "day" => normalizeDateFilter($input["day"] ?? ""),
         "date_from" => "",
         "date_to" => "",
@@ -188,13 +190,31 @@ function buildMonitoringWhereClause(array $filters, array &$bindings): string
         $bindings["user_name"] = "%" . escapeLikeTerm(uppercaseText($filters["user_name"])) . "%";
     }
 
-    if (($filters["month"] ?? "") !== "") {
-        $monthStart = DateTimeImmutable::createFromFormat("Y-m-d", $filters["month"] . "-01");
+    $monthFrom = $filters["month_from"] ?? "";
+    $monthTo = $filters["month_to"] ?? "";
+
+    // One selected month is an exact-month filter; two selected months form a range.
+    if ($monthFrom === "") {
+        $monthFrom = $monthTo;
+    }
+    if ($monthTo === "") {
+        $monthTo = $monthFrom;
+    }
+
+    if ($monthFrom !== "") {
+        $monthStart = DateTimeImmutable::createFromFormat("Y-m-d", $monthFrom . "-01");
+        if ($monthStart instanceof DateTimeImmutable) {
+            $conditions[] = "date_recorded >= :month_from_start";
+            $bindings["month_from_start"] = $monthStart->format("Y-m-d");
+        }
+    }
+
+    if ($monthTo !== "") {
+        $monthStart = DateTimeImmutable::createFromFormat("Y-m-d", $monthTo . "-01");
         if ($monthStart instanceof DateTimeImmutable) {
             $monthEnd = $monthStart->modify("first day of next month");
-            $conditions[] = "date_recorded >= :month_start AND date_recorded < :month_end";
-            $bindings["month_start"] = $monthStart->format("Y-m-d");
-            $bindings["month_end"] = $monthEnd->format("Y-m-d");
+            $conditions[] = "date_recorded < :month_to_end";
+            $bindings["month_to_end"] = $monthEnd->format("Y-m-d");
         }
     }
 

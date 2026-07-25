@@ -274,7 +274,8 @@ function buildMonitoringListQueryParams(string $companyKey, array $filters, bool
         "search" => "q",
         "identification_number" => "id_number",
         "user_name" => "user",
-        "month" => "month",
+        "month_from" => "month_from",
+        "month_to" => "month_to",
         "day" => "day",
         "disciplinary_action" => "action",
         "date_from" => "date_from",
@@ -625,8 +626,16 @@ function buildActiveFilterBadges(array $filters, ?string $fixedBranch = null): a
 {
     $badges = [];
 
-    if (($filters["month"] ?? "") !== "") {
-        $badges[] = "Month: " . formatDisplayMonth($filters["month"]);
+    $monthFrom = $filters["month_from"] ?? "";
+    $monthTo = $filters["month_to"] ?? "";
+    if ($monthFrom === "" || $monthTo === "" || $monthFrom === $monthTo) {
+        $selectedMonth = $monthFrom !== "" ? $monthFrom : $monthTo;
+        if ($selectedMonth !== "") {
+            $badges[] = "Month: " . formatDisplayMonth($selectedMonth);
+        }
+    } else {
+        $badges[] = "From: " . formatDisplayMonth($monthFrom);
+        $badges[] = "Until: " . formatDisplayMonth($monthTo);
     }
     if (($filters["day"] ?? "") !== "") {
         $badges[] = "Day: " . formatDisplayDate($filters["day"]);

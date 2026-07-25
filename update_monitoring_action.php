@@ -21,7 +21,9 @@ $redirectParams = [
     "company" => $company["key"],
 ];
 
-$filterMonth = trim((string) ($_POST["filter_month"] ?? ""));
+$legacyFilterMonth = trim((string) ($_POST["filter_month"] ?? ""));
+$filterMonthFrom = trim((string) ($_POST["filter_month_from"] ?? $legacyFilterMonth));
+$filterMonthTo = trim((string) ($_POST["filter_month_to"] ?? $legacyFilterMonth));
 $filterDay = trim((string) ($_POST["filter_day"] ?? ""));
 $filterBranch = trim((string) ($_POST["filter_branch"] ?? ""));
 $filterDealer = trim((string) ($_POST["filter_dealer"] ?? ""));
@@ -33,8 +35,11 @@ $filterDataCorrection = trim((string) ($_POST["filter_data_correction"] ?? ""));
 $filterEscalation = trim((string) ($_POST["filter_escalation"] ?? ""));
 $filterPage = trim((string) ($_POST["filter_page"] ?? ""));
 
-if ($filterMonth !== "") {
-    $redirectParams["month"] = $filterMonth;
+if ($filterMonthFrom !== "") {
+    $redirectParams["month_from"] = $filterMonthFrom;
+}
+if ($filterMonthTo !== "") {
+    $redirectParams["month_to"] = $filterMonthTo;
 }
 if ($filterDay !== "") {
     $redirectParams["day"] = $filterDay;
