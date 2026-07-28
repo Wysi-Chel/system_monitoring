@@ -5549,3 +5549,1276 @@ body.page-system-monitoring.page-print-summary .print-summary-table td {
         font-size: 6px;
     }
 }
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-launcher-link,
+body.page-ticket-monitoring .sidebar-launcher-link {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 6px;
+    padding: 3px 2px;
+    color: var(--brand-dark);
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-decoration: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-launcher-link svg,
+body.page-ticket-monitoring .sidebar-launcher-link svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-launcher-link:hover,
+body.page-ticket-monitoring .sidebar-launcher-link:hover {
+    text-decoration: underline;
+}
+
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-launcher-link,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-launcher-link {
+    align-self: center;
+    justify-content: center;
+}
+
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-launcher-link span,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-launcher-link span {
+    display: none;
+}
+
+/* Shared MICEI portal design language
+   Mirrors the ID Monitoring and Equipment Repair workspaces. */
+@font-face {
+    font-family: "MICEI Sans";
+    src: url("/micei_mis/assets/fonts/HyundaiSansTextOffice-Medium.ttf") format("truetype");
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "MICEI Head";
+    src: url("/micei_mis/assets/fonts/HyundaiSansHeadOffice-Bold.ttf") format("truetype");
+    font-display: swap;
+}
+
+body.page-system-monitoring:not(.page-print-summary),
+body.page-ticket-monitoring {
+    --brand: #bf1f2f;
+    --brand-dark: #991927;
+    --brand-soft: #f8dde1;
+    --accent-amber: #d88616;
+    --accent-blue: #4b79b5;
+    --accent-green: #309176;
+    --bg: #f2f1f0;
+    --surface: #ffffff;
+    --surface-soft: #f7f7f8;
+    --surface-strong: #ffffff;
+    --text: #20242b;
+    --text-soft: #6f747c;
+    --text-muted: #858a91;
+    --border: #dfe2e6;
+    --border-strong: #c9cdd2;
+    --table-head: #f5f6f7;
+    --table-row: #fbfbfc;
+    --form-tint: rgba(191, 31, 47, 0.015);
+    --focus: rgba(191, 31, 47, 0.15);
+    --shell-shadow: 0 18px 44px rgba(34, 29, 27, 0.075);
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+        "sidebar topbar"
+        "sidebar main";
+    gap: 20px;
+    align-items: start;
+    color: var(--text);
+    background:
+        radial-gradient(circle at 8% 4%, var(--brand-soft) 0, transparent 22%),
+        linear-gradient(145deg, #f7f7f8 0%, #f0eeec 52%, #f6f5f4 100%);
+    font-family: "MICEI Sans", "Segoe UI", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+body.company-hyundai.page-system-monitoring:not(.page-print-summary),
+body.company-hyundai.page-ticket-monitoring {
+    --brand: #0b61ba;
+    --brand-dark: #084d94;
+    --brand-soft: #dceaf9;
+    --form-tint: rgba(11, 97, 186, 0.035);
+    --focus: rgba(11, 97, 186, 0.15);
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary),
+html.dark-theme body.page-ticket-monitoring {
+    --brand: #dd6c79;
+    --brand-dark: #f3b7bf;
+    --brand-soft: #4c2026;
+    --bg: #171b20;
+    --surface: #242a31;
+    --surface-soft: #1d2329;
+    --surface-strong: #242a31;
+    --text: #eef2f5;
+    --text-soft: #c7d0d8;
+    --text-muted: #9eabb7;
+    --border: #39424c;
+    --border-strong: #4a5662;
+    --table-head: #313943;
+    --table-row: #20262d;
+    --form-tint: rgba(221, 108, 121, 0.055);
+    --focus: rgba(221, 108, 121, 0.2);
+    --shell-shadow: 0 20px 52px rgba(0, 0, 0, 0.24);
+    background:
+        radial-gradient(circle at 8% 4%, rgba(221, 108, 121, 0.13) 0, transparent 24%),
+        linear-gradient(145deg, #15181d 0%, #1b1f25 52%, #14171b 100%);
+}
+
+html.dark-theme body.company-hyundai.page-system-monitoring:not(.page-print-summary),
+html.dark-theme body.company-hyundai.page-ticket-monitoring {
+    --brand: #64aaf0;
+    --brand-dark: #b8d9fb;
+    --brand-soft: #183d62;
+    --form-tint: rgba(100, 170, 240, 0.055);
+    --focus: rgba(100, 170, 240, 0.2);
+}
+
+body.page-system-monitoring:not(.page-print-summary)::before,
+body.page-system-monitoring:not(.page-print-summary)::after,
+body.page-ticket-monitoring::before,
+body.page-ticket-monitoring::after {
+    content: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .app-sidebar,
+body.page-ticket-monitoring .app-sidebar {
+    grid-area: sidebar;
+    position: sticky;
+    top: 20px;
+    width: auto;
+    max-height: calc(100vh - 40px);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
+    border: 1px solid rgba(31, 35, 40, 0.08);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 20px 55px rgba(35, 30, 28, 0.1);
+    backdrop-filter: blur(18px);
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .app-sidebar,
+html.dark-theme body.page-ticket-monitoring .app-sidebar {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(25, 29, 35, 0.97);
+    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.34);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-header,
+body.page-ticket-monitoring .sidebar-header {
+    padding: 2px 2px 14px;
+    border-bottom: 1px solid var(--border);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-brand-mark,
+body.page-ticket-monitoring .sidebar-brand-mark {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 20px rgba(35, 30, 28, 0.08);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-brand-mark img,
+body.page-ticket-monitoring .sidebar-brand-mark img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-brand-copy .brand-kicker,
+body.page-ticket-monitoring .sidebar-brand-copy .brand-kicker,
+body.page-system-monitoring:not(.page-print-summary) .eyebrow,
+body.page-ticket-monitoring .eyebrow {
+    color: var(--brand-dark);
+    font-family: "MICEI Sans", "Segoe UI", sans-serif;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-brand-copy .brand-title,
+body.page-ticket-monitoring .sidebar-brand-copy .brand-title {
+    margin-top: 2px;
+    color: var(--text);
+    font-family: "MICEI Head", "Segoe UI", sans-serif;
+    font-size: 0.96rem;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-panel,
+body.page-system-monitoring:not(.page-print-summary) .sidebar-action,
+body.page-ticket-monitoring .sidebar-panel,
+body.page-ticket-monitoring .sidebar-action {
+    padding: 8px 2px;
+    gap: 6px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-company-panel,
+body.page-ticket-monitoring .sidebar-company-panel {
+    padding-top: 4px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-workspace-panel,
+body.page-ticket-monitoring .sidebar-workspace-panel,
+body.page-system-monitoring:not(.page-print-summary) .sidebar-action,
+body.page-ticket-monitoring .sidebar-action {
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-panel-label,
+body.page-ticket-monitoring .sidebar-panel-label {
+    padding: 0 10px 5px;
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-nav,
+body.page-ticket-monitoring .sidebar-nav {
+    gap: 4px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-link,
+body.page-ticket-monitoring .sidebar-link {
+    min-height: 44px;
+    padding: 11px 12px;
+    gap: 10px;
+    color: #656970;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-link svg,
+body.page-ticket-monitoring .sidebar-link svg {
+    width: 19px;
+    height: 19px;
+    flex: 0 0 19px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-link:hover,
+body.page-ticket-monitoring .sidebar-link:hover {
+    color: var(--text);
+    background: #f4f5f6;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-link.active,
+body.page-ticket-monitoring .sidebar-link.active {
+    color: var(--brand-dark);
+    background: var(--brand-soft);
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .sidebar-link,
+html.dark-theme body.page-ticket-monitoring .sidebar-link {
+    color: var(--text-soft);
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .sidebar-link:hover,
+html.dark-theme body.page-ticket-monitoring .sidebar-link:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.065);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .company-switch,
+body.page-ticket-monitoring .company-switch {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .switch-link,
+body.page-ticket-monitoring .switch-link {
+    min-height: 40px;
+    padding: 8px 9px;
+    border: 0;
+    border-radius: 11px;
+    background: #f4f5f6;
+    color: #656970;
+    font-size: 0.72rem;
+    letter-spacing: 0;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .company-switch .switch-link.active,
+body.page-system-monitoring:not(.page-print-summary) .company-switch .switch-link[aria-current="page"],
+body.page-ticket-monitoring .company-switch .switch-link.active,
+body.page-ticket-monitoring .company-switch .switch-link[aria-current="page"] {
+    color: #ffffff;
+    background: var(--brand);
+    box-shadow: 0 8px 18px var(--focus);
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .switch-link,
+html.dark-theme body.page-ticket-monitoring .switch-link {
+    color: var(--text-soft);
+    background: rgba(255, 255, 255, 0.055);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-action .button-link,
+body.page-ticket-monitoring .sidebar-action .button-link {
+    width: 100%;
+    min-height: 42px;
+    justify-content: flex-start;
+    padding: 9px 12px;
+    border-radius: 12px;
+    box-shadow: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-action .sidebar-primary-action,
+body.page-ticket-monitoring .sidebar-action .sidebar-primary-action {
+    color: #ffffff;
+    border-color: var(--brand);
+    background: var(--brand);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-action .sidebar-secondary-action,
+body.page-ticket-monitoring .sidebar-action .sidebar-secondary-action {
+    color: #5f636a;
+    border-color: transparent;
+    background: #f4f5f6;
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .sidebar-action .sidebar-secondary-action,
+html.dark-theme body.page-ticket-monitoring .sidebar-action .sidebar-secondary-action {
+    color: var(--text-soft);
+    background: rgba(255, 255, 255, 0.055);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-footer,
+body.page-ticket-monitoring .sidebar-footer {
+    margin-top: auto;
+    gap: 8px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-theme-control,
+body.page-ticket-monitoring .sidebar-theme-control,
+body.page-system-monitoring:not(.page-print-summary) .sidebar-user,
+body.page-ticket-monitoring .sidebar-user {
+    padding: 10px 12px;
+    border-radius: 13px;
+    background: #f4f5f6;
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .sidebar-theme-control,
+html.dark-theme body.page-ticket-monitoring .sidebar-theme-control,
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .sidebar-user,
+html.dark-theme body.page-ticket-monitoring .sidebar-user {
+    background: rgba(255, 255, 255, 0.055);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-user,
+body.page-ticket-monitoring .sidebar-user {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .user-avatar,
+body.page-ticket-monitoring .user-avatar {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    color: #ffffff;
+    border-radius: 50%;
+    background: var(--brand);
+    font-family: "MICEI Head", "Segoe UI", sans-serif;
+    font-size: 0.82rem;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-user-copy,
+body.page-ticket-monitoring .sidebar-user-copy {
+    min-width: 0;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-user-copy strong,
+body.page-system-monitoring:not(.page-print-summary) .sidebar-user-copy small,
+body.page-ticket-monitoring .sidebar-user-copy strong,
+body.page-ticket-monitoring .sidebar-user-copy small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-user-copy strong,
+body.page-ticket-monitoring .sidebar-user-copy strong {
+    color: var(--text);
+    font-size: 0.8rem;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-user-copy small,
+body.page-ticket-monitoring .sidebar-user-copy small {
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-size: 0.67rem;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-launcher-link,
+body.page-ticket-monitoring .sidebar-launcher-link {
+    padding: 5px 10px;
+    color: var(--brand-dark);
+    font-size: 0.72rem;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-toggle,
+body.page-ticket-monitoring .sidebar-toggle {
+    position: absolute;
+    top: 50%;
+    right: -18px;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    color: #5e6269;
+    background: var(--surface-strong);
+    box-shadow: 0 9px 24px rgba(35, 30, 28, 0.14);
+    transform: translateY(-50%);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-toggle:hover,
+body.page-ticket-monitoring .sidebar-toggle:hover {
+    color: var(--brand-dark);
+    background: var(--brand-soft);
+    transform: translateY(-50%);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .app-topbar,
+body.page-ticket-monitoring .app-topbar {
+    grid-area: topbar;
+    width: 100%;
+    max-width: 1280px;
+    min-width: 0;
+    margin: 0 auto;
+    padding: 22px 26px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    border: 1px solid rgba(31, 35, 40, 0.07);
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: var(--shell-shadow);
+    backdrop-filter: blur(18px);
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .app-topbar,
+html.dark-theme body.page-ticket-monitoring .app-topbar {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(36, 42, 49, 0.96);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .topbar-copy,
+body.page-ticket-monitoring .topbar-copy {
+    min-width: 0;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .app-topbar .eyebrow,
+body.page-ticket-monitoring .app-topbar .eyebrow {
+    margin: 0 0 4px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .page-title,
+body.page-ticket-monitoring .page-title {
+    margin: 0;
+    color: var(--text);
+    font-family: "MICEI Head", "Segoe UI", sans-serif;
+    font-size: clamp(1.65rem, 3vw, 2rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .page-description,
+body.page-ticket-monitoring .page-description {
+    max-width: 68ch;
+    margin: 6px 0 0;
+    color: var(--text-soft);
+    font-size: 0.9rem;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .topbar-actions,
+body.page-ticket-monitoring .topbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 9px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .mobile-sidebar-toggle,
+body.page-ticket-monitoring .mobile-sidebar-toggle,
+body.page-system-monitoring:not(.page-print-summary) .sidebar-scrim,
+body.page-ticket-monitoring .sidebar-scrim {
+    display: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) main,
+body.page-ticket-monitoring main {
+    grid-area: main;
+    width: 100%;
+    max-width: 1280px;
+    min-width: 0;
+    margin: 0 auto;
+    padding: 0;
+    display: grid;
+    gap: 18px;
+    align-content: start;
+}
+
+body.page-system-monitoring:not(.page-print-summary) main > .card,
+body.page-ticket-monitoring main > .card {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .card,
+body.page-ticket-monitoring .card {
+    margin: 0;
+    padding: 22px;
+    overflow: hidden;
+    border: 1px solid rgba(31, 35, 40, 0.08);
+    border-radius: 22px;
+    background: var(--surface);
+    box-shadow: var(--shell-shadow);
+}
+
+body.page-system-monitoring:not(.page-print-summary) h2,
+body.page-system-monitoring:not(.page-print-summary) h3,
+body.page-ticket-monitoring h2,
+body.page-ticket-monitoring h3 {
+    color: var(--text);
+    font-family: "MICEI Head", "Segoe UI", sans-serif;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-shell,
+body.page-ticket-monitoring .dashboard-shell {
+    gap: 18px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-hero,
+body.page-ticket-monitoring .dashboard-hero {
+    min-height: auto;
+    padding: 0 0 17px;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    background: transparent;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-kicker,
+body.page-ticket-monitoring .dashboard-kicker {
+    display: block;
+    margin-bottom: 4px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--brand-dark);
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-hero h2,
+body.page-ticket-monitoring .dashboard-hero h2 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-scope,
+body.page-ticket-monitoring .dashboard-scope {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-scope-label,
+body.page-ticket-monitoring .dashboard-scope-label {
+    font-size: 0.68rem;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metrics-grid,
+body.page-ticket-monitoring .dashboard-metrics-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 14px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-card,
+body.page-ticket-monitoring .dashboard-metric-card {
+    min-height: 130px;
+    padding: 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--brand);
+    border-radius: 18px;
+    color: var(--text);
+    background: var(--surface);
+    box-shadow: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-monthly,
+body.page-ticket-monitoring .dashboard-metric-monthly {
+    border-top-color: var(--accent-blue);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-correction,
+body.page-ticket-monitoring .dashboard-metric-correction {
+    border-top-color: var(--accent-amber);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-escalation,
+body.page-ticket-monitoring .dashboard-metric-escalation {
+    border-top-color: #b4232f;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-tickets,
+body.page-ticket-monitoring .dashboard-metric-tickets {
+    border-top-color: var(--accent-green);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-link:hover,
+body.page-ticket-monitoring .dashboard-metric-link:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(31, 35, 40, 0.07);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-icon,
+body.page-ticket-monitoring .dashboard-metric-icon {
+    width: 39px;
+    height: 39px;
+    flex: 0 0 39px;
+    display: grid;
+    place-items: center;
+    color: var(--brand);
+    border-radius: 12px;
+    background: var(--brand-soft);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-monthly .dashboard-metric-icon,
+body.page-ticket-monitoring .dashboard-metric-monthly .dashboard-metric-icon {
+    color: #3866a4;
+    background: #e8f0fa;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-correction .dashboard-metric-icon,
+body.page-ticket-monitoring .dashboard-metric-correction .dashboard-metric-icon {
+    color: #a35c08;
+    background: #fff2d8;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-escalation .dashboard-metric-icon,
+body.page-ticket-monitoring .dashboard-metric-escalation .dashboard-metric-icon {
+    color: #b4232f;
+    background: #fbe2e5;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-tickets .dashboard-metric-icon,
+body.page-ticket-monitoring .dashboard-metric-tickets .dashboard-metric-icon {
+    color: #16735a;
+    background: #e2f5ef;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-icon svg,
+body.page-ticket-monitoring .dashboard-metric-icon svg {
+    width: 21px;
+    height: 21px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-copy,
+body.page-ticket-monitoring .dashboard-metric-copy,
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-label,
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-value,
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-note,
+body.page-ticket-monitoring .dashboard-metric-label,
+body.page-ticket-monitoring .dashboard-metric-value,
+body.page-ticket-monitoring .dashboard-metric-note {
+    display: block;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-copy,
+body.page-ticket-monitoring .dashboard-metric-copy {
+    min-width: 0;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-label,
+body.page-ticket-monitoring .dashboard-metric-label {
+    color: var(--text-soft);
+    font-size: 0.71rem;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-value,
+body.page-ticket-monitoring .dashboard-metric-value {
+    margin-top: 3px;
+    color: var(--text);
+    font-family: "MICEI Head", "Segoe UI", sans-serif;
+    font-size: 1.75rem;
+    line-height: 1.05;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-note,
+body.page-ticket-monitoring .dashboard-metric-note {
+    margin-top: 5px;
+    color: var(--text-muted);
+    font-size: 0.66rem;
+    line-height: 1.3;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-panel-grid,
+body.page-ticket-monitoring .dashboard-panel-grid {
+    grid-template-columns: minmax(0, 1.35fr) minmax(360px, 1fr);
+    gap: 16px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-panel-wide,
+body.page-ticket-monitoring .dashboard-panel-wide {
+    grid-column: auto;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-panel,
+body.page-ticket-monitoring .dashboard-panel {
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-panel-header,
+body.page-ticket-monitoring .dashboard-panel-header {
+    min-height: 66px;
+    margin: 0;
+    padding: 15px 19px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-panel-header h3,
+body.page-ticket-monitoring .dashboard-panel-header h3 {
+    color: var(--text);
+    font-size: 1rem;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-breakdown-list,
+body.page-ticket-monitoring .dashboard-breakdown-list {
+    padding: 14px 19px 19px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-breakdown-track,
+body.page-ticket-monitoring .dashboard-breakdown-track {
+    height: 7px;
+    border: 0;
+    border-radius: 99px;
+    background: #eceef1;
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) .dashboard-breakdown-track,
+html.dark-theme body.page-ticket-monitoring .dashboard-breakdown-track {
+    background: #333b45;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-breakdown-fill,
+body.page-ticket-monitoring .dashboard-breakdown-fill {
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--brand), color-mix(in srgb, var(--brand) 65%, white));
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-ticket-metrics,
+body.page-ticket-monitoring .dashboard-ticket-metrics {
+    margin: 0;
+    padding: 16px 17px 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-ticket-metric,
+body.page-ticket-monitoring .dashboard-ticket-metric {
+    padding: 12px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--surface-soft);
+    box-shadow: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-ticket-note,
+body.page-ticket-monitoring .dashboard-ticket-note {
+    margin: 0;
+    padding: 7px 19px 2px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .summary-header,
+body.page-ticket-monitoring .summary-header {
+    min-height: 58px;
+    margin: -4px -4px 16px;
+    padding: 2px 4px 15px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .summary-header h2,
+body.page-ticket-monitoring .summary-header h2 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .form-section,
+body.page-ticket-monitoring .form-section {
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--form-tint);
+}
+
+body.page-system-monitoring:not(.page-print-summary) label,
+body.page-ticket-monitoring label {
+    color: #4f545b;
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+html.dark-theme body.page-system-monitoring:not(.page-print-summary) label,
+html.dark-theme body.page-ticket-monitoring label {
+    color: var(--text-soft);
+}
+
+body.page-system-monitoring:not(.page-print-summary) input,
+body.page-system-monitoring:not(.page-print-summary) select,
+body.page-system-monitoring:not(.page-print-summary) textarea,
+body.page-ticket-monitoring input,
+body.page-ticket-monitoring select,
+body.page-ticket-monitoring textarea {
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    color: var(--text);
+    background: var(--surface);
+    font-family: inherit;
+    font-size: 0.8rem;
+}
+
+body.page-system-monitoring:not(.page-print-summary) input:focus,
+body.page-system-monitoring:not(.page-print-summary) select:focus,
+body.page-system-monitoring:not(.page-print-summary) textarea:focus,
+body.page-ticket-monitoring input:focus,
+body.page-ticket-monitoring select:focus,
+body.page-ticket-monitoring textarea:focus {
+    border-color: var(--brand);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--focus);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .option-button span,
+body.page-ticket-monitoring .option-button span {
+    min-height: 38px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+body.page-system-monitoring:not(.page-print-summary) button,
+body.page-system-monitoring:not(.page-print-summary) .button-link,
+body.page-system-monitoring:not(.page-print-summary) .page-number,
+body.page-ticket-monitoring button,
+body.page-ticket-monitoring .button-link,
+body.page-ticket-monitoring .page-number {
+    min-height: 40px;
+    padding: 9px 14px;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .primary,
+body.page-ticket-monitoring .primary {
+    color: #ffffff;
+    border-color: var(--brand);
+    background: var(--brand);
+    box-shadow: 0 8px 18px var(--focus);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .primary:hover,
+body.page-ticket-monitoring .primary:hover {
+    color: #ffffff;
+    border-color: var(--brand-dark);
+    background: var(--brand-dark);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .secondary,
+body.page-system-monitoring:not(.page-print-summary) .page-number,
+body.page-ticket-monitoring .secondary,
+body.page-ticket-monitoring .page-number {
+    color: var(--text);
+    border-color: var(--border);
+    background: var(--surface);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .summary-filter-form,
+body.page-ticket-monitoring .summary-filter-form {
+    width: 100%;
+    max-width: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .summary-filter-grid,
+body.page-ticket-monitoring .summary-filter-grid {
+    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+    gap: 12px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .summary-card-list,
+body.page-ticket-monitoring .summary-card-list {
+    gap: 10px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .summary-card,
+body.page-ticket-monitoring .summary-card {
+    padding: 13px;
+    gap: 8px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .summary-card:hover,
+body.page-ticket-monitoring .summary-card:hover {
+    border-color: var(--border-strong);
+    box-shadow: 0 10px 24px rgba(31, 35, 40, 0.06);
+}
+
+body.page-system-monitoring:not(.page-print-summary) .summary-card-field,
+body.page-ticket-monitoring .summary-card-field {
+    border: 0;
+    border-radius: 9px;
+    background: var(--surface-soft);
+    box-shadow: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .summary-card-label,
+body.page-ticket-monitoring .summary-card-label {
+    color: var(--text-muted);
+    font-size: 0.58rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .summary-card-value,
+body.page-ticket-monitoring .summary-card-value {
+    font-size: 0.7rem;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .dashboard-chip,
+body.page-ticket-monitoring .dashboard-chip,
+body.page-system-monitoring:not(.page-print-summary) .filter-badge,
+body.page-ticket-monitoring .filter-badge {
+    border: 0;
+    border-radius: 999px;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .table-wrapper,
+body.page-ticket-monitoring .table-wrapper {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: none;
+}
+
+body.page-system-monitoring:not(.page-print-summary) th,
+body.page-ticket-monitoring th {
+    padding: 13px 15px;
+    color: var(--brand-dark);
+    background: var(--table-head);
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.035em;
+}
+
+body.page-system-monitoring:not(.page-print-summary) td,
+body.page-ticket-monitoring td {
+    padding: 13px 15px;
+    font-size: 0.78rem;
+}
+
+body.page-system-monitoring:not(.page-print-summary) .sidebar-scrim,
+body.page-ticket-monitoring .sidebar-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: rgba(17, 24, 39, 0.46);
+}
+
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary),
+html.sidebar-collapsed body.page-ticket-monitoring {
+    grid-template-columns: 82px minmax(0, 1fr);
+}
+
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-user,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-user {
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    width: 48px;
+    height: 48px;
+    min-height: 48px;
+    margin-inline: auto;
+    padding: 6px;
+}
+
+html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-user-copy,
+html.sidebar-collapsed body.page-ticket-monitoring .sidebar-user-copy {
+    display: none;
+}
+
+@media (max-width: 1240px) {
+    body.page-system-monitoring:not(.page-print-summary) .dashboard-metrics-grid,
+    body.page-ticket-monitoring .dashboard-metrics-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1020px) {
+    body.page-system-monitoring:not(.page-print-summary) .dashboard-panel-grid,
+    body.page-ticket-monitoring .dashboard-panel-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    body.page-system-monitoring:not(.page-print-summary),
+    body.page-ticket-monitoring,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary),
+    html.sidebar-collapsed body.page-ticket-monitoring {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        overflow-x: hidden;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .app-sidebar,
+    body.page-ticket-monitoring .app-sidebar,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .app-sidebar,
+    html.sidebar-collapsed body.page-ticket-monitoring .app-sidebar {
+        position: fixed;
+        top: 12px;
+        bottom: 12px;
+        left: 12px;
+        z-index: 50;
+        width: min(280px, calc(100vw - 50px));
+        max-height: none;
+        padding: 16px;
+        overflow-y: auto;
+        border-radius: 22px;
+        transform: translateX(calc(-100% - 28px));
+        transition: transform 0.22s ease;
+    }
+
+    html.sidebar-open body.page-system-monitoring:not(.page-print-summary) .app-sidebar,
+    html.sidebar-open body.page-ticket-monitoring .app-sidebar {
+        transform: translateX(0);
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-toggle,
+    body.page-ticket-monitoring .sidebar-toggle {
+        display: none;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-brand-copy,
+    body.page-ticket-monitoring .sidebar-brand-copy,
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-panel-label,
+    body.page-ticket-monitoring .sidebar-panel-label,
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-link span,
+    body.page-ticket-monitoring .sidebar-link span,
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-action .button-link span,
+    body.page-ticket-monitoring .sidebar-action .button-link span,
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-user-copy,
+    body.page-ticket-monitoring .sidebar-user-copy {
+        display: initial;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-brand-copy,
+    body.page-ticket-monitoring .sidebar-brand-copy,
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-user-copy,
+    body.page-ticket-monitoring .sidebar-user-copy {
+        display: grid;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-nav,
+    body.page-ticket-monitoring .sidebar-nav,
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-action,
+    body.page-ticket-monitoring .sidebar-action {
+        grid-template-columns: 1fr;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-link,
+    body.page-ticket-monitoring .sidebar-link,
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-action .button-link,
+    body.page-ticket-monitoring .sidebar-action .button-link {
+        width: 100%;
+        height: auto;
+        min-height: 44px;
+        margin: 0;
+        padding: 10px 12px;
+        justify-content: flex-start;
+        text-align: left;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-user,
+    body.page-ticket-monitoring .sidebar-user,
+    html.sidebar-collapsed body.page-system-monitoring:not(.page-print-summary) .sidebar-user,
+    html.sidebar-collapsed body.page-ticket-monitoring .sidebar-user {
+        width: auto;
+        height: auto;
+        min-height: 0;
+        margin: 0;
+        padding: 10px 12px;
+        grid-template-columns: 36px minmax(0, 1fr);
+        justify-items: stretch;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .app-topbar,
+    body.page-ticket-monitoring .app-topbar {
+        width: 100%;
+        margin: 0 0 14px;
+        padding: 18px;
+        align-items: flex-start;
+        flex-direction: column;
+        border-radius: 20px;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .topbar-actions,
+    body.page-ticket-monitoring .topbar-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .mobile-sidebar-toggle,
+    body.page-ticket-monitoring .mobile-sidebar-toggle {
+        display: inline-flex;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .sidebar-scrim:not([hidden]),
+    body.page-ticket-monitoring .sidebar-scrim:not([hidden]) {
+        display: block;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) main,
+    body.page-ticket-monitoring main {
+        width: 100%;
+        max-width: none;
+        gap: 14px;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .card,
+    body.page-ticket-monitoring .card {
+        padding: 18px;
+        border-radius: 20px;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .dashboard-metrics-grid,
+    body.page-ticket-monitoring .dashboard-metrics-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-card,
+    body.page-ticket-monitoring .dashboard-metric-card {
+        min-height: 124px;
+        padding: 14px;
+        display: block;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .dashboard-metric-icon,
+    body.page-ticket-monitoring .dashboard-metric-icon {
+        width: 34px;
+        height: 34px;
+        margin-bottom: 9px;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .field-grid,
+    body.page-ticket-monitoring .field-grid,
+    body.page-system-monitoring:not(.page-print-summary) .selector-grid,
+    body.page-ticket-monitoring .selector-grid,
+    body.page-system-monitoring:not(.page-print-summary) .summary-card-grid,
+    body.page-ticket-monitoring .summary-card-grid,
+    body.page-system-monitoring:not(.page-print-summary) .summary-card-monitoring .summary-card-grid,
+    body.page-ticket-monitoring .summary-card-monitoring .summary-card-grid {
+        grid-template-columns: 1fr;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .field-span-2,
+    body.page-ticket-monitoring .field-span-2,
+    body.page-system-monitoring:not(.page-print-summary) .summary-card-field,
+    body.page-ticket-monitoring .summary-card-field {
+        grid-column: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    body.page-system-monitoring:not(.page-print-summary) .topbar-actions,
+    body.page-ticket-monitoring .topbar-actions {
+        grid-template-columns: 1fr;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .topbar-actions > *,
+    body.page-ticket-monitoring .topbar-actions > * {
+        width: 100%;
+    }
+
+    body.page-system-monitoring:not(.page-print-summary) .dashboard-metrics-grid,
+    body.page-ticket-monitoring .dashboard-metrics-grid,
+    body.page-system-monitoring:not(.page-print-summary) .dashboard-ticket-metrics,
+    body.page-ticket-monitoring .dashboard-ticket-metrics {
+        grid-template-columns: 1fr;
+    }
+}

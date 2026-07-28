@@ -41,12 +41,6 @@ $renderDashboardBreakdown = static function (array $items, string $emptyMessage)
 };
 ?>
 <section class="card dashboard-shell" id="dashboard-section">
-    <div class="dashboard-hero">
-        <div class="dashboard-hero-copy">
-            <div class="dashboard-kicker">Operational Dashboard</div>
-            <h2><?= e($company["company_name"]) ?> Monitoring Overview</h2>
-        </div>
-    </div>
 
     <div class="dashboard-scope">
         <div class="dashboard-scope-label">Current scope</div>
@@ -65,28 +59,48 @@ $renderDashboardBreakdown = static function (array $items, string $emptyMessage)
 
     <div class="dashboard-metrics-grid">
         <article class="dashboard-metric-card dashboard-metric-total">
-            <div class="dashboard-metric-label">Total records</div>
-            <div class="dashboard-metric-value"><?= e(number_format((int) ($dashboardMetrics["total_records"] ?? 0))) ?></div>
+            <span class="dashboard-metric-icon"><?= iconSvg("file-text") ?></span>
+            <span class="dashboard-metric-copy">
+                <span class="dashboard-metric-label">Total records</span>
+                <strong class="dashboard-metric-value"><?= e(number_format((int) ($dashboardMetrics["total_records"] ?? 0))) ?></strong>
+                <small class="dashboard-metric-note">Current scope</small>
+            </span>
         </article>
 
         <a href="<?= e($dashboardMonthlyUrl) ?>" class="dashboard-metric-card dashboard-metric-link dashboard-metric-monthly" title="<?= e((string) ($dashboardData["current_month_label"] ?? "Current month")) ?>">
-            <div class="dashboard-metric-label">Monthly records</div>
-            <div class="dashboard-metric-value"><?= e(number_format((int) ($dashboardMetrics["monthly_records"] ?? 0))) ?></div>
+            <span class="dashboard-metric-icon"><?= iconSvg("calendar") ?></span>
+            <span class="dashboard-metric-copy">
+                <span class="dashboard-metric-label">Monthly records</span>
+                <strong class="dashboard-metric-value"><?= e(number_format((int) ($dashboardMetrics["monthly_records"] ?? 0))) ?></strong>
+                <small class="dashboard-metric-note"><?= e((string) ($dashboardData["current_month_label"] ?? "Current month")) ?></small>
+            </span>
         </a>
 
         <a href="<?= e($dashboardUserErrorUrl) ?>" class="dashboard-metric-card dashboard-metric-link dashboard-metric-correction">
-            <div class="dashboard-metric-label">User error</div>
-            <div class="dashboard-metric-value"><?= e(number_format((int) ($dashboardMetrics["data_correction_records"] ?? 0))) ?></div>
+            <span class="dashboard-metric-icon"><?= iconSvg("edit") ?></span>
+            <span class="dashboard-metric-copy">
+                <span class="dashboard-metric-label">User error</span>
+                <strong class="dashboard-metric-value"><?= e(number_format((int) ($dashboardMetrics["data_correction_records"] ?? 0))) ?></strong>
+                <small class="dashboard-metric-note">Needs correction</small>
+            </span>
         </a>
 
         <a href="<?= e($dashboardEscalationUrl) ?>" class="dashboard-metric-card dashboard-metric-link dashboard-metric-escalation">
-            <div class="dashboard-metric-label">Action items</div>
-            <div class="dashboard-metric-value"><?= e(number_format((int) ($dashboardMetrics["escalation_records"] ?? 0))) ?></div>
+            <span class="dashboard-metric-icon"><?= iconSvg("upload") ?></span>
+            <span class="dashboard-metric-copy">
+                <span class="dashboard-metric-label">Action items</span>
+                <strong class="dashboard-metric-value"><?= e(number_format((int) ($dashboardMetrics["escalation_records"] ?? 0))) ?></strong>
+                <small class="dashboard-metric-note">Needs attention</small>
+            </span>
         </a>
 
         <article class="dashboard-metric-card dashboard-metric-tickets">
-            <div class="dashboard-metric-label">Linked tickets</div>
-            <div class="dashboard-metric-value"><?= e(number_format((int) ($dashboardMetrics["linked_tickets"] ?? 0))) ?></div>
+            <span class="dashboard-metric-icon"><?= iconSvg("ticket") ?></span>
+            <span class="dashboard-metric-copy">
+                <span class="dashboard-metric-label">Linked tickets</span>
+                <strong class="dashboard-metric-value"><?= e(number_format((int) ($dashboardMetrics["linked_tickets"] ?? 0))) ?></strong>
+                <small class="dashboard-metric-note">Connected records</small>
+            </span>
         </article>
     </div>
 

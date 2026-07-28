@@ -6,6 +6,9 @@
     var modal = document.getElementById("saved-modal");
     var okButton = document.getElementById("saved-modal-ok");
     var sidebarToggle = document.getElementById("sidebar-toggle");
+    var mobileSidebarToggle = document.getElementById("mobile-sidebar-toggle");
+    var sidebarScrim = document.getElementById("sidebar-scrim");
+    var appSidebar = document.getElementById("app-sidebar");
     var scrollRestoreKey = "systemMonitoringSummaryScroll";
 
     if (sidebarToggle) {
@@ -31,6 +34,42 @@
         });
 
         updateSidebarToggle();
+    }
+
+    if (mobileSidebarToggle && sidebarScrim && appSidebar) {
+        var setMobileSidebarOpen = function (isOpen) {
+            root.classList.toggle("sidebar-open", isOpen);
+            mobileSidebarToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+            sidebarScrim.hidden = !isOpen;
+            document.body.style.overflow = isOpen ? "hidden" : "";
+        };
+
+        mobileSidebarToggle.addEventListener("click", function () {
+            setMobileSidebarOpen(!root.classList.contains("sidebar-open"));
+        });
+
+        sidebarScrim.addEventListener("click", function () {
+            setMobileSidebarOpen(false);
+        });
+
+        appSidebar.addEventListener("click", function (event) {
+            if (event.target.closest("a") && window.matchMedia("(max-width: 760px)").matches) {
+                setMobileSidebarOpen(false);
+            }
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape" && root.classList.contains("sidebar-open")) {
+                setMobileSidebarOpen(false);
+                mobileSidebarToggle.focus();
+            }
+        });
+
+        window.addEventListener("resize", function () {
+            if (!window.matchMedia("(max-width: 760px)").matches) {
+                setMobileSidebarOpen(false);
+            }
+        });
     }
 
     var monthPickers = document.querySelectorAll("[data-month-picker]");

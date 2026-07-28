@@ -1,11 +1,21 @@
 <?php
 $headerKicker = $headerKicker ?? $company["company_name"];
 $headerTitle = $headerTitle ?? $company["system_name"];
-$headerDescription = $headerDescription ?? "";
+$currentScript = basename((string) ($_SERVER["SCRIPT_NAME"] ?? "index.php"));
+$defaultHeaderDescriptions = [
+    "index.php" => "Track daily transactions, exceptions, and action items in one workspace.",
+    "ticket_monitoring.php" => "Create, review, and follow support tickets from submission to resolution.",
+    "monitoring_record.php" => "Review the complete activity, supporting details, and actions for a monitoring record.",
+    "promote_to_live.php" => "Review test changes before promoting them to the live monitoring system.",
+];
+$headerDescription = $headerDescription ?? ($defaultHeaderDescriptions[$currentScript] ?? "");
 $showCompanySwitch = $showCompanySwitch ?? true;
 $appEnvironmentLabel = getApplicationEnvironmentDisplayLabel();
-$currentScript = basename((string) ($_SERVER["SCRIPT_NAME"] ?? "index.php"));
 $todayDisplay = (new DateTimeImmutable("now", new DateTimeZone("Asia/Manila")))->format("M d, Y");
+$portalUser = $_SESSION[MONITORING_PORTAL_SESSION_USER_KEY] ?? [];
+$portalUserName = trim((string) ($portalUser["full_name"] ?? $portalUser["name"] ?? "Portal user"));
+$portalUserRole = trim((string) ($portalUser["role"] ?? "User"));
+$portalUserInitial = uppercaseText(substr($portalUserName !== "" ? $portalUserName : "U", 0, 1));
 
 $monitoringHomeUrl = buildUrl("index.php", ["company" => $company["key"]]);
 $encodeRecordUrl = $currentScript === "index.php"
@@ -16,6 +26,29 @@ $summaryUrl = $currentScript === "index.php"
     : $monitoringHomeUrl . "#summary-section";
 $ticketNavUrl = $ticketMonitoringUrl ?? buildUrl("ticket_monitoring.php", ["company" => $company["key"]]);
 $promotionUrl = buildUrl("promote_to_live.php", ["company" => $company["key"]]);
+$topbarActionUrl = $encodeRecordUrl;
+$topbarActionLabel = "Encode record";
+$topbarActionIcon = "plus";
+$sidebarPrimaryActionUrl = $encodeRecordUrl;
+$sidebarPrimaryActionLabel = "Encode New Record";
+$sidebarSummaryActionUrl = $summaryUrl;
+
+if ($currentScript === "ticket_monitoring.php") {
+    $topbarActionUrl = "#ticket-record-form";
+    $topbarActionLabel = "New ticket record";
+    $topbarActionIcon = "plus";
+    $sidebarPrimaryActionUrl = "#ticket-record-form";
+    $sidebarPrimaryActionLabel = "Encode Ticket Record";
+    $sidebarSummaryActionUrl = "#ticket-summary";
+} elseif ($currentScript === "monitoring_record.php") {
+    $topbarActionUrl = $summaryUrl;
+    $topbarActionLabel = "Back to summary";
+    $topbarActionIcon = "arrow-left";
+} elseif ($currentScript === "promote_to_live.php") {
+    $topbarActionUrl = $monitoringHomeUrl;
+    $topbarActionLabel = "Back to dashboard";
+    $topbarActionIcon = "arrow-left";
+}
 
 $navItems = [
     [
@@ -23,6 +56,7 @@ $navItems = [
         "icon" => "home",
         "href" => $monitoringHomeUrl,
         "script" => "index.php",
+        "scripts" => ["index.php", "monitoring_record.php"],
     ],
     [
         "label" => "Ticket Monitoring",
@@ -77,11 +111,12 @@ $navItems = [
                 <?php if (array_key_exists("visible", $item) && !$item["visible"]): ?>
                     <?php continue; ?>
                 <?php endif; ?>
+                <?php $isActiveNavItem = in_array($currentScript, $item["scripts"] ?? [$item["script"]], true); ?>
                 <a
                     href="<?= e($item["href"]) ?>"
-                    class="sidebar-link<?= $currentScript === $item["script"] ? " active" : "" ?>"
+                    class="sidebar-link<?= $isActiveNavItem ? " active" : "" ?>"
                     title="<?= e($item["label"]) ?>"
-                    <?= $currentScript === $item["script"] ? 'aria-current="page"' : "" ?>
+                    <?= $isActiveNavItem ? 'aria-current="page"' : "" ?>
                 >
                     <?= iconSvg((string) ($item["icon"] ?? "home")) ?>
                     <span><?= e($item["label"]) ?></span>
@@ -92,11 +127,11 @@ $navItems = [
 
     <section class="sidebar-action">
         <div class="sidebar-panel-label">Quick Action</div>
-        <a href="<?= e($encodeRecordUrl) ?>" class="button-link button-with-icon primary sidebar-primary-action" title="Encode new record">
+        <a href="<?= e($sidebarPrimaryActionUrl) ?>" class="button-link button-with-icon primary sidebar-primary-action" title="<?= e($sidebarPrimaryActionLabel) ?>">
             <?= iconSvg("plus") ?>
-            <span>Encode New Record</span>
+            <span><?= e($sidebarPrimaryActionLabel) ?></span>
         </a>
-        <a href="<?= e($summaryUrl) ?>" class="button-link button-with-icon secondary sidebar-secondary-action" title="Open summary">
+        <a href="<?= e($sidebarSummaryActionUrl) ?>" class="button-link button-with-icon secondary sidebar-secondary-action" title="Open summary">
             <?= iconSvg("file-text") ?>
             <span>Open Summary</span>
         </a>
@@ -112,13 +147,21 @@ $navItems = [
                 <span class="sr-only">Switch theme</span>
             </button>
         </div>
-        <div class="sidebar-note">
-            <span class="sidebar-note-icon"><?= iconSvg("calendar") ?></span>
-            <span class="sidebar-note-copy">
-                <span>Today</span>
-                <strong><?= e($todayDisplay) ?></strong>
+        <div class="sidebar-user">
+            <span class="user-avatar"><?= e($portalUserInitial) ?></span>
+            <span class="sidebar-user-copy">
+                <strong><?= e($portalUserName !== "" ? $portalUserName : "Portal user") ?></strong>
+                <small><?= e($portalUserRole !== "" ? $portalUserRole : "User") ?> · <?= e($todayDisplay) ?></small>
             </span>
         </div>
+        <a
+            href="/micei_mis/systems.php"
+            class="sidebar-launcher-link"
+            title="Return to system launcher"
+        >
+            <?= iconSvg("arrow-left") ?>
+            <span>System Launcher</span>
+        </a>
     </div>
 
     <button
@@ -134,13 +177,36 @@ $navItems = [
     </button>
 </aside>
 
-<?php if (canAccessPromoteToLiveUi()): ?>
+<button type="button" class="sidebar-scrim" id="sidebar-scrim" aria-label="Close navigation" hidden></button>
+
 <header class="app-topbar">
-    <div class="topbar-meta">
+    <div class="topbar-copy">
+        <p class="eyebrow">IT Department</p>
+        <h1 class="page-title"><?= e($headerTitle) ?></h1>
+        <?php if ($headerDescription !== ""): ?>
+        <p class="page-description"><?= e($headerDescription) ?></p>
+        <?php endif; ?>
+    </div>
+    <div class="topbar-actions">
+        <button
+            type="button"
+            class="mobile-sidebar-toggle"
+            id="mobile-sidebar-toggle"
+            aria-controls="app-sidebar"
+            aria-expanded="false"
+        >
+            <?= iconSvg("home") ?>
+            <span>Menu</span>
+        </button>
+        <a href="<?= e($topbarActionUrl) ?>" class="button-link button-with-icon primary topbar-primary-action">
+            <?= iconSvg($topbarActionIcon) ?>
+            <span><?= e($topbarActionLabel) ?></span>
+        </a>
+        <?php if (canAccessPromoteToLiveUi()): ?>
         <a href="<?= e($promotionUrl) ?>" class="button-link secondary topbar-inline-action icon-button" aria-label="Promote to live" title="Promote to live">
             <?= iconSvg("upload") ?>
             <span class="sr-only">Promote to live</span>
         </a>
+        <?php endif; ?>
     </div>
 </header>
-<?php endif; ?>

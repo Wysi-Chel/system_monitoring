@@ -1,6 +1,6 @@
 <?php
-const MONITORING_AUTH_PASSWORD = "@Micei2026";
-const MONITORING_AUTH_SESSION_KEY = "system_monitoring_authenticated";
+const MONITORING_PORTAL_LOGIN_URL = "/automated_id_maker/login.php";
+const MONITORING_PORTAL_SESSION_USER_KEY = "user";
 
 function startMonitoringSession(): void
 {
@@ -12,6 +12,7 @@ function startMonitoringSession(): void
         "httponly" => true,
         "samesite" => "Lax",
         "secure" => !empty($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off",
+        "path" => "/",
     ]);
     session_start();
 }
@@ -19,7 +20,8 @@ function startMonitoringSession(): void
 function isMonitoringAuthenticated(): bool
 {
     startMonitoringSession();
-    return !empty($_SESSION[MONITORING_AUTH_SESSION_KEY]);
+    $portalUser = $_SESSION[MONITORING_PORTAL_SESSION_USER_KEY] ?? null;
+    return is_array($portalUser) && !empty($portalUser["id"]);
 }
 
 function getSafeAuthRedirectTarget(?string $target): string
@@ -38,19 +40,6 @@ function requireMonitoringAuthentication(): void
         return;
     }
 
-    $currentUrl = $_SERVER["REQUEST_URI"] ?? "index.php";
-    header("Location: login.php?next=" . rawurlencode(getSafeAuthRedirectTarget($currentUrl)));
+    header("Location: " . MONITORING_PORTAL_LOGIN_URL);
     exit;
-}
-
-function authenticateMonitoringPassword(string $password): bool
-{
-    if (!hash_equals(MONITORING_AUTH_PASSWORD, $password)) {
-        return false;
-    }
-
-    startMonitoringSession();
-    session_regenerate_id(true);
-    $_SESSION[MONITORING_AUTH_SESSION_KEY] = true;
-    return true;
 }
