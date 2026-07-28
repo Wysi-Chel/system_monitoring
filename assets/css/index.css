@@ -5707,7 +5707,7 @@ body.page-ticket-monitoring .app-sidebar {
     display: flex;
     flex-direction: column;
     gap: 14px;
-    overflow-y: auto;
+    overflow: visible;
     border: 1px solid rgba(31, 35, 40, 0.08);
     border-radius: 24px;
     background: rgba(255, 255, 255, 0.96);
