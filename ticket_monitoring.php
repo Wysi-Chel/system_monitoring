@@ -331,7 +331,7 @@ $ticketFormDefaults = [
                                 title="Edit Status"
                                 onchange="if (this.value !== '') { this.form.submit(); }"
                             >
-                                <option value="" selected disabled>Change status</option>
+                                <option value="" selected disabled>Change Status</option>
                                 <?php foreach ($ticketStatusOptions as $option): ?>
                                     <?php if (($row["ticket_status"] ?? "") === $option) { continue; } ?>
                                 <option value="<?= e($option) ?>"><?= e($option) ?></option>
@@ -350,7 +350,6 @@ $ticketFormDefaults = [
                             <input type="hidden" name="filter_page" value="<?= e($pagination["page"]) ?>">
                             <button type="submit" class="ticket-delete-button icon-button" aria-label="Delete ticket record" title="Delete ticket record">
                                 <?= iconSvg("trash") ?>
-                                <span class="sr-only">Delete ticket record</span>
                             </button>
                         </form>
                     </div>
