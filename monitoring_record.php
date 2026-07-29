@@ -84,7 +84,10 @@ if ($record !== null && $recordUserName !== "") {
 $memoIssuanceRecords = array_values(array_filter(
     $userTransactionRecords,
     static fn (array $historyRow): bool => isUserErrorMonitoringRecord($historyRow)
-        && normalizeMonitoringMemoAction((string) ($historyRow["disciplinary_action"] ?? "")) !== ""
+        && (
+            normalizeMonitoringMemoAction((string) ($historyRow["disciplinary_action"] ?? "")) !== ""
+            || isMonitoringRefresherCourseRecord($historyRow)
+        )
 ));
 
 $incidentReportImagePath = trim((string) ($record["incident_report_image_path"] ?? ""));

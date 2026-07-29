@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS `micei_system_monitoring` (
     action_taken VARCHAR(100),
     memo_printed_at DATETIME NULL,
     memo_issued_at DATETIME NULL,
+    refresher_completed_at DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -62,6 +63,7 @@ CREATE TABLE IF NOT EXISTS `ntr_system_monitoring` (
     action_taken VARCHAR(100),
     memo_printed_at DATETIME NULL,
     memo_issued_at DATETIME NULL,
+    refresher_completed_at DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

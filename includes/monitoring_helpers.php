@@ -113,6 +113,25 @@ function hasConfirmedMonitoringMemoIssued(array $row): bool
     return trim((string) ($row["memo_issued_at"] ?? "")) !== "";
 }
 
+function isMonitoringRefresherCourseRecord(array $row): bool
+{
+    $refresherCourseKey = uppercaseText("Refresher Course");
+
+    foreach (["disciplinary_action", "action_taken", "offense"] as $key) {
+        if (uppercaseText(trim((string) ($row[$key] ?? ""))) === $refresherCourseKey) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function hasCompletedMonitoringRefresherCourse(array $row): bool
+{
+    return isMonitoringRefresherCourseRecord($row)
+        && trim((string) ($row["refresher_completed_at"] ?? "")) !== "";
+}
+
 function getIssuedMonitoringMemoAction(array $row): string
 {
     $actionValues = [];
@@ -148,6 +167,18 @@ function getIssuedMonitoringMemoAction(array $row): string
 
 function formatMonitoringMemoActionStatusDisplayValue(array $row): string
 {
+    if (isMonitoringRefresherCourseRecord($row)) {
+        $completedAt = trim((string) ($row["refresher_completed_at"] ?? ""));
+        if ($completedAt === "") {
+            return "Refresher Course - Required";
+        }
+
+        $completedDate = formatDisplayDate($completedAt);
+        return $completedDate !== ""
+            ? "Refresher Course - Done (" . $completedDate . ")"
+            : "Refresher Course - Done";
+    }
+
     $issuedAction = getIssuedMonitoringMemoAction($row);
     if ($issuedAction !== "") {
         $displayValue = $issuedAction . " - Issued";
@@ -182,14 +213,39 @@ function getAvailableMonitoringMemoActionOptions(array $row): array
 
     $offenseCount = (int) ($row["data_correction_offense_count"] ?? 0);
     $hasIncidentReportAttachment = trim((string) ($row["incident_report_image_path"] ?? "")) !== "";
+    $priorIssuedVerbalMemoCount = (int) ($row["prior_issued_verbal_memo_count"] ?? 0);
+    $priorIssuedFinalMemoCount = (int) ($row["prior_issued_final_memo_count"] ?? 0);
 
     if ($offenseCount === 1) {
         return $hasIncidentReportAttachment ? [getMonitoringIncidentReportOffense()] : [];
     }
 
-    return $offenseCount >= 2
-        ? ["Verbal Memo", "Written Memo", "Refresher Course"]
-        : [];
+    if ($offenseCount < 2) {
+        return [];
+    }
+
+    if ($priorIssuedFinalMemoCount >= 1) {
+        return ["Refresher Course"];
+    }
+
+    if ($priorIssuedVerbalMemoCount >= 3) {
+        return ["Final Memo"];
+    }
+
+    return ["Verbal Memo", "Written Memo", "Refresher Course"];
+}
+
+function needsMonitoringRefresherCourse(array $row): bool
+{
+    if (!isUserErrorMonitoringRecord($row) || hasCompletedMonitoringRefresherCourse($row)) {
+        return false;
+    }
+
+    if (isMonitoringRefresherCourseRecord($row)) {
+        return true;
+    }
+
+    return getAvailableMonitoringMemoActionOptions($row) === ["Refresher Course"];
 }
 
 function resolveSuggestedMonitoringMemoAction(array $row, int $count): string

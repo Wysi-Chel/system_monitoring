@@ -445,6 +445,7 @@ function fetchDataCorrectionOffenseStatesByRecordId(PDO $pdo, string $tableNameS
     $offenseStatesByRecordId = [];
     $offenseCountsByUser = [];
     $issuedActionsByUser = [];
+    $issuedActionCountsByUser = [];
     $actionRanks = [
         "Verbal Memo" => 1,
         "Written Memo" => 2,
@@ -461,10 +462,13 @@ function fetchDataCorrectionOffenseStatesByRecordId(PDO $pdo, string $tableNameS
         $offenseCountsByUser[$userKey] = ($offenseCountsByUser[$userKey] ?? 0) + 1;
         $currentIssuedAction = getIssuedMonitoringMemoAction($row);
         $cycleIssuedAction = $issuedActionsByUser[$userKey] ?? "";
+        $priorIssuedActionCounts = $issuedActionCountsByUser[$userKey] ?? [];
 
         $offenseStatesByRecordId[$recordId] = [
             "count" => $offenseCountsByUser[$userKey],
             "memo_cycle_issued_action" => $cycleIssuedAction,
+            "prior_issued_verbal_memo_count" => (int) ($priorIssuedActionCounts["Verbal Memo"] ?? 0),
+            "prior_issued_final_memo_count" => (int) ($priorIssuedActionCounts["Final Memo"] ?? 0),
         ];
 
         if (
@@ -472,6 +476,11 @@ function fetchDataCorrectionOffenseStatesByRecordId(PDO $pdo, string $tableNameS
             && ($actionRanks[$currentIssuedAction] ?? 0) > ($actionRanks[$cycleIssuedAction] ?? 0)
         ) {
             $issuedActionsByUser[$userKey] = $currentIssuedAction;
+        }
+
+        if ($currentIssuedAction !== "") {
+            $issuedActionCountsByUser[$userKey][$currentIssuedAction] =
+                (int) ($priorIssuedActionCounts[$currentIssuedAction] ?? 0) + 1;
         }
 
     }
@@ -532,6 +541,8 @@ function enrichMonitoringRecordsWithDataCorrectionActions(PDO $pdo, string $tabl
         $row["data_correction_offense_count"] = 0;
         $row["data_correction_alert"] = "";
         $row["memo_cycle_issued_action"] = "";
+        $row["prior_issued_verbal_memo_count"] = 0;
+        $row["prior_issued_final_memo_count"] = 0;
         $row["disciplinary_action"] = trim((string) ($row["disciplinary_action"] ?? ""));
 
         if ($row["disciplinary_action"] === "") {
@@ -570,6 +581,16 @@ function enrichMonitoringRecordsWithDataCorrectionActions(PDO $pdo, string $tabl
         $row["data_correction_offense_count"] = $offenseCount;
         $row["data_correction_alert"] = (string) ($resolvedAction["data_correction_alert"] ?? $offenseCount);
         $row["memo_cycle_issued_action"] = (string) ($offenseState["memo_cycle_issued_action"] ?? "");
+        $row["prior_issued_verbal_memo_count"] =
+            (int) ($offenseState["prior_issued_verbal_memo_count"] ?? 0);
+        $row["prior_issued_final_memo_count"] =
+            (int) ($offenseState["prior_issued_final_memo_count"] ?? 0);
+
+        if (needsMonitoringRefresherCourse($row)) {
+            $row["data_correction_alert"] = "User Error Count: {$offenseCount} - Refresher course required";
+        } elseif (hasCompletedMonitoringRefresherCourse($row)) {
+            $row["data_correction_alert"] = "User Error Count: {$offenseCount} - Refresher course done";
+        }
 
         if ($row["disciplinary_action"] === "" && !$isMissingFirstIncidentReport) {
             $suggestedAction = resolveSuggestedMonitoringMemoAction($row, $offenseCount);
@@ -788,6 +809,25 @@ function markMonitoringMemoIssued(
          WHERE id = :id"
     );
     $stmt->bindValue(":issued_at", $issuedAt, PDO::PARAM_STR);
+    $stmt->bindValue(":id", $id, PDO::PARAM_INT);
+    $stmt->execute();
+
+    return $stmt->rowCount() > 0;
+}
+
+function markMonitoringRefresherCourseCompleted(PDO $pdo, string $tableNameSql, int $id): bool
+{
+    if ($id <= 0) {
+        return false;
+    }
+
+    $completedAt = (new DateTimeImmutable("now", new DateTimeZone("Asia/Manila")))->format("Y-m-d H:i:s");
+    $stmt = $pdo->prepare(
+        "UPDATE {$tableNameSql}
+         SET refresher_completed_at = COALESCE(refresher_completed_at, :completed_at)
+         WHERE id = :id"
+    );
+    $stmt->bindValue(":completed_at", $completedAt, PDO::PARAM_STR);
     $stmt->bindValue(":id", $id, PDO::PARAM_INT);
     $stmt->execute();
 

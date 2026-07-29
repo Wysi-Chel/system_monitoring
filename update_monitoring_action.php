@@ -13,6 +13,7 @@ $tableNameSql = quoteMysqlIdentifier($company["table_name"]);
 $recordId = is_numeric($_POST["record_id"] ?? null) ? (int) $_POST["record_id"] : 0;
 $disciplinaryAction = trim((string) ($_POST["disciplinary_action"] ?? $_POST["action_taken"] ?? ""));
 $markMemoIssued = ($_POST["mark_memo_issued"] ?? "") === "1";
+$markRefresherCourseDone = ($_POST["mark_refresher_course_done"] ?? "") === "1";
 $memoIssuedDate = trim((string) ($_POST["memo_issued_date"] ?? ""));
 $returnIdentificationNumber = normalizeIdentificationNumberFilter(
     $_POST["return_identification_number"] ?? ""
@@ -92,7 +93,7 @@ $redirectLocation = $returnIdentificationNumber !== ""
     ]) . "#memo-issuance-history"
     : "index.php?" . http_build_query($redirectParams) . "#summary-section";
 
-if ($recordId > 0 && ($disciplinaryAction !== "" || $markMemoIssued)) {
+if ($recordId > 0 && ($disciplinaryAction !== "" || $markMemoIssued || $markRefresherCourseDone)) {
     $record = fetchMonitoringRecordById($pdo, $tableNameSql, $recordId);
 
     if ($record !== null) {
@@ -105,6 +106,17 @@ if ($recordId > 0 && ($disciplinaryAction !== "" || $markMemoIssued)) {
             && getIssuedMonitoringMemoAction($record) === ""
         ) {
             markMonitoringMemoIssued($pdo, $tableNameSql, $recordId, $memoIssuedDate);
+            header("Location: " . $redirectLocation);
+            exit;
+        }
+
+        if (
+            $markRefresherCourseDone
+            && isUserErrorMonitoringRecord($record)
+            && isMonitoringRefresherCourseRecord($record)
+            && !hasCompletedMonitoringRefresherCourse($record)
+        ) {
+            markMonitoringRefresherCourseCompleted($pdo, $tableNameSql, $recordId);
             header("Location: " . $redirectLocation);
             exit;
         }

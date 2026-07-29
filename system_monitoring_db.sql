@@ -56,6 +56,7 @@ CREATE TABLE `micei_system_monitoring` (
   `action_taken` varchar(100) DEFAULT NULL,
   `memo_printed_at` datetime DEFAULT NULL,
   `memo_issued_at` datetime DEFAULT NULL,
+  `refresher_completed_at` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -208,6 +209,7 @@ CREATE TABLE `ntr_system_monitoring` (
   `action_taken` varchar(100) DEFAULT NULL,
   `memo_printed_at` datetime DEFAULT NULL,
   `memo_issued_at` datetime DEFAULT NULL,
+  `refresher_completed_at` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 

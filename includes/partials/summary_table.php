@@ -246,13 +246,23 @@ $renderMonthPicker = static function (string $id, string $name, string $label, s
                 ? $formattedDisciplinaryAction
                 : trim((string) formatSummaryValue(["key" => "offense", "format" => "text"], $row));
             $memoStatusDisplayValue = formatMonitoringMemoActionStatusDisplayValue($row);
-            $alertActionDisplayValue = $memoStatusDisplayValue !== "" ? $memoStatusDisplayValue : $offenseValue;
+            $needsRefresherCourse = needsMonitoringRefresherCourse($row);
+            $hasCompletedRefresherCourse = hasCompletedMonitoringRefresherCourse($row);
+            $showRefresherCourseDoneButton = $needsRefresherCourse
+                && isMonitoringRefresherCourseRecord($row);
+            $alertActionDisplayValue = $needsRefresherCourse
+                ? "USER NEEDS REFRESHER COURSE"
+                : ($memoStatusDisplayValue !== "" ? $memoStatusDisplayValue : $offenseValue);
             $rowActionOptions = [];
             $hasIssuedMemo = getIssuedMonitoringMemoAction($row) !== "";
             $showIncidentReportResolveButton = !$hasFinalMemo && hasPendingMonitoringIncidentReportStatus($row);
 
             if (!$hasFinalMemo && !$hasIssuedMemo) {
-                if (!$showIncidentReportResolveButton && canMarkMonitoringRecordDone($row["status"] ?? "")) {
+                if (
+                    !$showIncidentReportResolveButton
+                    && !$needsRefresherCourse
+                    && canMarkMonitoringRecordDone($row["status"] ?? "")
+                ) {
                     $rowActionOptions[] = $monitoringDoneStatus;
                 }
 
@@ -313,6 +323,34 @@ $renderMonthPicker = static function (string $id, string $name, string $label, s
                         </button>
                     </form>
                     <?php endif; ?>
+                    <?php if ($showRefresherCourseDoneButton): ?>
+                    <form
+                        action="update_monitoring_action.php"
+                        method="POST"
+                        class="monitoring-action-form"
+                        data-refresher-done-confirm
+                    >
+                        <input type="hidden" name="company" value="<?= e($company["key"]) ?>">
+                        <input type="hidden" name="record_id" value="<?= e($row["id"] ?? "") ?>">
+                        <input type="hidden" name="mark_refresher_course_done" value="1">
+                        <input type="hidden" name="filter_month_from" value="<?= e($filters["month_from"] ?? "") ?>">
+                        <input type="hidden" name="filter_month_to" value="<?= e($filters["month_to"] ?? "") ?>">
+                        <input type="hidden" name="filter_day" value="<?= e($filters["day"] ?? "") ?>">
+                        <input type="hidden" name="filter_branch" value="<?= e($filters["branch"] ?? "") ?>">
+                        <input type="hidden" name="filter_dealer" value="<?= e($filters["dealer"] ?? "") ?>">
+                        <input type="hidden" name="filter_identification_number" value="<?= e($filters["identification_number"] ?? "") ?>">
+                        <input type="hidden" name="filter_user_name" value="<?= e($filters["user_name"] ?? "") ?>">
+                        <input type="hidden" name="filter_status" value="<?= e($filters["status"] ?? "") ?>">
+                        <input type="hidden" name="filter_action" value="<?= e($filters["disciplinary_action"] ?? "") ?>">
+                        <input type="hidden" name="filter_data_correction" value="<?= !empty($filters["data_correction_only"]) ? "1" : "" ?>">
+                        <input type="hidden" name="filter_escalation" value="<?= !empty($filters["escalation_only"]) ? "1" : "" ?>">
+                        <input type="hidden" name="filter_page" value="<?= e($pagination["page"]) ?>">
+                        <button type="submit" class="secondary icon-button summary-card-edit-link" aria-label="Mark refresher course done" title="Mark refresher course done">
+                            <?= iconSvg("check") ?>
+                            <span>Done</span>
+                        </button>
+                    </form>
+                    <?php endif; ?>
                     <?php if ($rowActionOptions !== []): ?>
                     <form action="update_monitoring_action.php" method="POST" class="monitoring-action-form">
                         <input type="hidden" name="company" value="<?= e($company["key"]) ?>">
@@ -365,6 +403,12 @@ $renderMonthPicker = static function (string $id, string $name, string $label, s
 
                 <?php if ($hasFinalMemo): ?>
                 <span class="dashboard-chip final-memo">Final memo issued</span>
+                <?php endif; ?>
+
+                <?php if ($needsRefresherCourse): ?>
+                <span class="dashboard-chip alert">REFRESHER COURSE REQUIRED</span>
+                <?php elseif ($hasCompletedRefresherCourse): ?>
+                <span class="dashboard-chip">REFRESHER COURSE DONE</span>
                 <?php endif; ?>
 
                 <?php if ($ticketValue !== ""): ?>

@@ -363,6 +363,7 @@ function ensureMonitoringTable(PDO $pdo, array $company): void
             action_taken VARCHAR(100),
             memo_printed_at DATETIME NULL,
             memo_issued_at DATETIME NULL,
+            refresher_completed_at DATETIME NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )"
     );
@@ -373,6 +374,7 @@ function ensureMonitoringTable(PDO $pdo, array $company): void
     ensureMysqlTableColumn($pdo, $tableNameSql, "action_taken", "action_taken VARCHAR(100) AFTER offense");
     ensureMysqlTableColumn($pdo, $tableNameSql, "memo_printed_at", "memo_printed_at DATETIME NULL AFTER action_taken");
     ensureMysqlTableColumn($pdo, $tableNameSql, "memo_issued_at", "memo_issued_at DATETIME NULL AFTER memo_printed_at");
+    ensureMysqlTableColumn($pdo, $tableNameSql, "refresher_completed_at", "refresher_completed_at DATETIME NULL AFTER memo_issued_at");
     syncLegacyTableIntoTargetIfNeeded($pdo, $company["legacy_table_names"] ?? [], $company["table_name"]);
     backfillMonitoringDealerValues($pdo, $tableNameSql);
     backfillMonitoringModuleValues($pdo, $tableNameSql);

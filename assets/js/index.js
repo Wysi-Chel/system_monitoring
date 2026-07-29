@@ -311,6 +311,15 @@
             return;
         }
 
+        if (
+            event.target
+            && event.target.hasAttribute("data-refresher-done-confirm")
+            && !window.confirm("Confirm that the refresher course is done?")
+        ) {
+            event.preventDefault();
+            return;
+        }
+
         if (isSummaryActionForm(event.target)) {
             saveSummaryScrollPosition();
         }
