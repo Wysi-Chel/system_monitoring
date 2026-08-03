@@ -1,5 +1,5 @@
 <?php
-const MONITORING_PORTAL_LOGIN_URL = "/automated_id_maker/login.php";
+const MONITORING_PORTAL_LOGIN_URL = "/micei_mis/login.php";
 const MONITORING_PORTAL_SESSION_USER_KEY = "user";
 
 function startMonitoringSession(): void

@@ -556,9 +556,12 @@
 
         themeToggle.addEventListener("click", function () {
             root.classList.toggle("dark-theme");
+            root.dataset.theme = root.classList.contains("dark-theme") ? "dark" : "light";
+            root.style.colorScheme = root.dataset.theme;
 
             try {
-                window.localStorage.setItem("systemMonitoringTheme", root.classList.contains("dark-theme") ? "dark" : "light");
+                window.localStorage.setItem("micei-theme", root.dataset.theme);
+                window.localStorage.setItem("systemMonitoringTheme", root.dataset.theme);
             } catch (error) {
             }
 
@@ -567,6 +570,20 @@
 
         updateThemeToggle();
     }
+
+    window.addEventListener("storage", function (event) {
+        if (event.key !== "micei-theme" || (event.newValue !== "dark" && event.newValue !== "light")) {
+            return;
+        }
+        root.classList.toggle("dark-theme", event.newValue === "dark");
+        root.dataset.theme = event.newValue;
+        root.style.colorScheme = event.newValue;
+        if (themeToggle) {
+            themeToggle.setAttribute("aria-pressed", event.newValue === "dark" ? "true" : "false");
+            themeToggle.setAttribute("aria-label", event.newValue === "dark" ? "Switch to light mode" : "Switch to dark mode");
+            themeToggle.setAttribute("title", event.newValue === "dark" ? "Switch to light mode" : "Switch to dark mode");
+        }
+    });
 
     if (!modal || !okButton) {
         return;

@@ -645,7 +645,7 @@ function fetchMonitoringRecordsByUserName(
         "SELECT *
          FROM {$tableNameSql}
          WHERE UPPER(TRIM(COALESCE(user_name, ''))) = :user_name
-         ORDER BY transaction_date {$direction}, id {$direction}"
+         ORDER BY created_at {$direction}, transaction_date {$direction}, id {$direction}"
     );
     $stmt->bindValue(":user_name", uppercaseText($normalizedUserName), PDO::PARAM_STR);
     $stmt->execute();

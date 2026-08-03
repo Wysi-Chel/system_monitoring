@@ -127,6 +127,21 @@ function formatMonitoringDetailDisplayValue(array $field, array $row): string
     return trim($formattedValue) !== "" ? $formattedValue : "N/A";
 }
 
+function formatMonitoringActivityTimestamp(array $row): string
+{
+    $createdAt = trim((string) ($row["created_at"] ?? ""));
+    $dateValue = $createdAt !== ""
+        ? $createdAt
+        : trim((string) ($row["transaction_date"] ?? $row["date_recorded"] ?? ""));
+    $timestamp = $dateValue !== "" ? strtotime($dateValue) : false;
+
+    if ($timestamp === false) {
+        return $dateValue !== "" ? $dateValue : "Date unavailable";
+    }
+
+    return date($createdAt !== "" ? "M j, Y · g:i A" : "M j, Y", $timestamp);
+}
+
 function renderMonitoringReadonlyField(string $label, string $value, string $fieldClass = "", bool $isMultiline = false): void
 {
     $classes = trim("field " . $fieldClass);
@@ -298,14 +313,15 @@ function renderMonitoringReadonlyField(string $label, string $value, string $fie
 
     <?php require __DIR__ . "/includes/partials/memo_issuance_history.php"; ?>
 
-    <section class="card">
-        <div class="summary-header">
+    <section class="card user-transaction-history">
+        <div class="summary-header user-transaction-history-header">
             <div>
-                <h2>User Transaction History</h2>
+                <span class="user-transaction-history-kicker">User activity</span>
+                <h2>Transaction history</h2>
                 <?php if ($recordUserName !== ""): ?>
                 <p class="note">
-                    Showing <strong><?= e((string) count($userTransactionRecords)) ?></strong> transaction<?= count($userTransactionRecords) === 1 ? "" : "s" ?>
-                    recorded for user <strong><?= e(uppercaseText($recordUserName)) ?></strong>.
+                    <strong><?= e((string) count($userTransactionRecords)) ?></strong> transaction<?= count($userTransactionRecords) === 1 ? "" : "s" ?>
+                    recorded for <strong><?= e(uppercaseText($recordUserName)) ?></strong>.
                 </p>
                 <?php else: ?>
                 <p class="note">This record has no user name, so related transactions cannot be matched yet.</p>
@@ -324,71 +340,74 @@ function renderMonitoringReadonlyField(string $label, string $value, string $fie
         <?php elseif ($userTransactionRecords === []): ?>
         <div class="summary-card-empty">No transactions were found for this user.</div>
         <?php else: ?>
-        <div class="table-wrapper compact-summary-table-wrapper">
-            <table class="compact-summary-table record-history-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Transaction Date</th>
-                        <th>ID Number</th>
-                        <th>Client Name</th>
-                        <th>Transaction Reference</th>
-                        <th>Payment Reference</th>
-                        <th>Amount</th>
-                        <th>Processed Type</th>
-                        <th>Status</th>
-                        <th>User Error Count</th>
-                        <th>Alert</th>
-                        <th>View</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($userTransactionRecords as $historyRow): ?>
-                        <?php
-                        $historyRecordId = (int) ($historyRow["id"] ?? 0);
-                        $historyIdentificationNumber = trim((string) ($historyRow["identification_number"] ?? ""));
-                        $historyRecordUrl = $historyIdentificationNumber !== ""
-                            ? buildUrl("monitoring_record.php", $listQueryParams, [
-                                "identification_number" => $historyIdentificationNumber,
-                                "id_number" => null,
-                            ])
-                            : "";
-                        $isCurrentRecord = $historyRecordId === (int) ($record["id"] ?? 0);
-                        $historyUserErrorCount = (int) ($historyRow["data_correction_offense_count"] ?? 0);
-                        $historyAlertValue = trim((string) ($historyRow["data_correction_alert"] ?? ""));
-                        ?>
-                    <tr<?= $isCurrentRecord ? ' class="record-history-current-row"' : "" ?>>
-                        <td><?= e(formatMonitoringDetailDisplayValue(["key" => "date_recorded", "format" => "date"], $historyRow)) ?></td>
-                        <td><?= e(formatMonitoringDetailDisplayValue(["key" => "transaction_date", "format" => "date"], $historyRow)) ?></td>
-                        <td>
-                            <?php if ($historyRecordUrl !== ""): ?>
-                            <a href="<?= e($historyRecordUrl) ?>" class="record-link"><?= e($historyIdentificationNumber) ?></a>
-                            <?php else: ?>
-                            <?= e($historyIdentificationNumber !== "" ? $historyIdentificationNumber : "N/A") ?>
-                            <?php endif; ?>
-                        </td>
-                        <td><?= e(formatMonitoringDetailDisplayValue(["key" => "client_name", "format" => "text"], $historyRow)) ?></td>
-                        <td><?= e(formatMonitoringDetailDisplayValue(["key" => "invoice_reference", "format" => "text"], $historyRow)) ?></td>
-                        <td><?= e(formatMonitoringDetailDisplayValue(["key" => "payment_reference", "format" => "text"], $historyRow)) ?></td>
-                        <td><?= e(formatMonitoringDetailDisplayValue(["key" => "amount", "format" => "amount"], $historyRow)) ?></td>
-                        <td><?= e(formatMonitoringDetailDisplayValue(["key" => "processed_type", "format" => "text"], $historyRow)) ?></td>
-                        <td><?= e(formatMonitoringDetailDisplayValue(["key" => "status", "format" => "text"], $historyRow)) ?></td>
-                        <td><?= e($historyUserErrorCount > 0 ? (string) $historyUserErrorCount : "N/A") ?></td>
-                        <td><?= e($historyAlertValue !== "" ? uppercaseText($historyAlertValue) : "N/A") ?></td>
-                        <td class="record-history-view-cell">
-                            <?php if ($isCurrentRecord): ?>
-                            <span class="record-history-current-label">Watching</span>
-                            <?php elseif ($historyRecordUrl !== ""): ?>
-                            <a href="<?= e($historyRecordUrl) ?>" class="record-link">Open</a>
-                            <?php else: ?>
-                            <span class="note">Unavailable</span>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+        <ol class="transaction-activity-list">
+            <?php foreach ($userTransactionRecords as $historyRow): ?>
+                <?php
+                $historyRecordId = (int) ($historyRow["id"] ?? 0);
+                $historyIdentificationNumber = trim((string) ($historyRow["identification_number"] ?? ""));
+                $historyRecordUrl = $historyIdentificationNumber !== ""
+                    ? buildUrl("monitoring_record.php", $listQueryParams, [
+                        "identification_number" => $historyIdentificationNumber,
+                        "id_number" => null,
+                    ])
+                    : "";
+                $isCurrentRecord = $historyRecordId === (int) ($record["id"] ?? 0);
+                $historyClientName = trim((string) ($historyRow["client_name"] ?? ""));
+                $historyProcessedBy = trim((string) ($historyRow["processed_by"] ?? ""));
+                $historyProcessedType = trim((string) ($historyRow["processed_type"] ?? ""));
+                $historyStatus = trim((string) ($historyRow["status"] ?? ""));
+                $historyInvoiceReference = trim((string) ($historyRow["invoice_reference"] ?? ""));
+                $historyPaymentReference = trim((string) ($historyRow["payment_reference"] ?? ""));
+                $historyUserErrorCount = (int) ($historyRow["data_correction_offense_count"] ?? 0);
+                $historyAlertValue = trim((string) ($historyRow["data_correction_alert"] ?? ""));
+                $historySummaryParts = [];
+                if ($historyClientName !== "") {
+                    $historySummaryParts[] = uppercaseText($historyClientName);
+                }
+                if ($historyInvoiceReference !== "") {
+                    $historySummaryParts[] = "Transaction ref " . $historyInvoiceReference;
+                }
+                if ($historyPaymentReference !== "") {
+                    $historySummaryParts[] = "Payment ref " . $historyPaymentReference;
+                }
+                $historySummaryParts[] = formatMonitoringDetailDisplayValue(["key" => "amount", "format" => "amount"], $historyRow);
+                $historyMetaParts = array_values(array_filter([
+                    $historyProcessedType !== "" ? uppercaseText($historyProcessedType) : "",
+                    $historyStatus !== "" ? uppercaseText($historyStatus) : "",
+                    $historyUserErrorCount > 0 ? $historyUserErrorCount . " user error" . ($historyUserErrorCount === 1 ? "" : "s") : "",
+                    $historyAlertValue !== "" ? uppercaseText($historyAlertValue) : "",
+                ], static fn (string $value): bool => $value !== ""));
+                ?>
+            <li class="transaction-activity-item<?= $isCurrentRecord ? " is-current" : "" ?>">
+                <span class="transaction-activity-marker" aria-hidden="true"></span>
+                <div class="transaction-activity-content">
+                    <div class="transaction-activity-title">
+                        <?php if ($historyRecordUrl !== "" && !$isCurrentRecord): ?>
+                        <a href="<?= e($historyRecordUrl) ?>"><?= e($historyIdentificationNumber) ?></a>
+                        <?php else: ?>
+                        <span><?= e($historyIdentificationNumber !== "" ? $historyIdentificationNumber : "Transaction") ?></span>
+                        <?php endif; ?>
+                        was recorded.
+                    </div>
+                    <div class="transaction-activity-summary"><?= e(implode(" · ", $historySummaryParts)) ?></div>
+                    <div class="transaction-activity-byline">
+                        By <?= e($historyProcessedBy !== "" ? uppercaseText($historyProcessedBy) : "System Administrator") ?>
+                        <?php if ($historyMetaParts !== []): ?>
+                        <span aria-hidden="true">·</span> <?= e(implode(" · ", $historyMetaParts)) ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div class="transaction-activity-time">
+                    <time datetime="<?= e((string) ($historyRow["created_at"] ?? $historyRow["transaction_date"] ?? "")) ?>"><?= e(formatMonitoringActivityTimestamp($historyRow)) ?></time>
+                    <?php if ($isCurrentRecord): ?>
+                    <span class="transaction-activity-current"></span>
+                    <?php elseif ($historyRecordUrl !== ""): ?>
+                    <a href="<?= e($historyRecordUrl) ?>">Open record</a>
+                    <?php endif; ?>
+                </div>
+            </li>
+            <?php endforeach; ?>
+        </ol>
         <?php endif; ?>
     </section>
 
