@@ -1,8 +1,7 @@
-<section class="card" id="memo-issuance-history">
-    <div class="summary-header">
-        <div>
-            <h2>Memo / Refresher Course History</h2>
-        </div>
+<section class="transaction-memo-history" id="memo-issuance-history">
+    <div class="transaction-memo-history-header">
+        <span class="user-transaction-history-kicker">Memo activity</span>
+        <h3>Memo / Refresher Course History</h3>
     </div>
 
     <?php if ($recordUserName === ""): ?>
@@ -133,7 +132,6 @@
                             title="<?= e($memoPrintedAt !== "" ? "Reprint memo" : "Print memo") ?>"
                         >
                             <?= iconSvg("printer") ?>
-                            <span class="sr-only"><?= e($memoPrintedAt !== "" ? "Reprint memo" : "Print memo") ?></span>
                         </a>
                         <?php endif; ?>
                     </td>

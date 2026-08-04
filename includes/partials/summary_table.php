@@ -96,8 +96,8 @@ $renderMonthPicker = static function (string $id, string $name, string $label, s
         <?php endif; ?>
 
         <div class="summary-filter-grid">
-            <?php $renderMonthPicker("filter-month-from", "month_from", "Month From", (string) ($filters["month_from"] ?? "")); ?>
-            <?php $renderMonthPicker("filter-month-to", "month_to", "Month To", (string) ($filters["month_to"] ?? "")); ?>
+            <?php $renderMonthPicker("filter-month-from", "month_from", "From", (string) ($filters["month_from"] ?? "")); ?>
+            <?php $renderMonthPicker("filter-month-to", "month_to", "To", (string) ($filters["month_to"] ?? "")); ?>
             <div class="field">
                 <label for="filter-day">Day</label>
                 <input type="date" id="filter-day" name="day" value="<?= e($filters["day"] ?? "") ?>">

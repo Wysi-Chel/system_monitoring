@@ -115,7 +115,6 @@ $recordMemoUrl = $record !== null
     ])
     : "";
 $recordMemoLabel = $recordHasPrintedMemo ? "Reprint memo" : "Print memo";
-$isResolvedIncidentReport = $record !== null && hasResolvedMonitoringIncidentReportStatus($record);
 $savedTitle = "Record Updated";
 $savedMessage = $identificationNumber !== ""
     ? "Record " . $identificationNumber . " successfully updated."
@@ -142,14 +141,13 @@ function formatMonitoringActivityTimestamp(array $row): string
     return date($createdAt !== "" ? "M j, Y · g:i A" : "M j, Y", $timestamp);
 }
 
-function renderMonitoringReadonlyField(string $label, string $value, string $fieldClass = "", bool $isMultiline = false): void
+function renderMonitoringRecordFact(string $label, string $value, string $factClass = "", bool $isMultiline = false): void
 {
-    $classes = trim("field " . $fieldClass);
-    $valueClasses = "record-readonly" . ($isMultiline ? " multiline" : "");
+    $classes = trim("record-fact " . $factClass . ($isMultiline ? " record-fact-multiline" : ""));
     ?>
     <div class="<?= e($classes) ?>">
-        <label><?= e($label) ?></label>
-        <div class="<?= e($valueClasses) ?>"><?= nl2br(e($value)) ?></div>
+        <span class="record-fact-label"><?= e($label) ?></span>
+        <div class="record-fact-value"><?= nl2br(e($value)) ?></div>
     </div>
     <?php
 }
@@ -219,99 +217,155 @@ function renderMonitoringReadonlyField(string $label, string $value, string $fie
         </div>
     </section>
     <?php else: ?>
-    <section class="card">
+    <section class="card<?= !$isEditMode ? " record-information-card" : "" ?>">
+        <?php if ($isEditMode): ?>
         <div class="summary-header">
             <div>
                 <h2>Record Information</h2>
                 <p class="note">Full incident details for ID number <strong><?= e($identificationNumber) ?></strong>.</p>
             </div>
             <div class="summary-actions">
-                <?php if (!$isEditMode && $recordMemoUrl !== ""): ?>
-                <a href="<?= e($recordMemoUrl) ?>" class="button-link secondary icon-button" data-memo-print-link aria-label="<?= e($recordMemoLabel) ?>" title="<?= e($recordMemoLabel) ?>">
-                    <?= iconSvg("printer") ?>
-                    <span class="sr-only"><?= e($recordMemoLabel) ?></span>
-                </a>
-                <?php endif; ?>
-                <?php if ($isEditMode): ?>
                 <a href="<?= e($recordViewUrl) ?>" class="button-link secondary icon-button" aria-label="Cancel edit" title="Cancel edit">
                     <?= iconSvg("arrow-left") ?>
                     <span class="sr-only">Cancel edit</span>
                 </a>
-                <?php else: ?>
-                <a href="<?= e($recordEditUrl) ?>" class="button-link secondary icon-button" aria-label="Edit record" title="Edit record">
-                    <?= iconSvg("edit") ?>
-                    <span class="sr-only">Edit record</span>
-                </a>
-                <?php endif; ?>
             </div>
         </div>
 
-        <?php if (!$isEditMode && $isResolvedIncidentReport): ?>
-        <div class="form-alert form-alert-success record-status-notice" role="status">
-            <?= e(uppercaseText("Incident report resolved")) ?>
-        </div>
-        <?php endif; ?>
-
-        <?php if ($isEditMode): ?>
-            <?php
-            $editingRecord = $record;
-            require __DIR__ . "/includes/partials/encoding_form.php";
-            ?>
+        <?php
+        $editingRecord = $record;
+        require __DIR__ . "/includes/partials/encoding_form.php";
+        ?>
         <?php else: ?>
-        <div class="record-layout">
-            <section class="form-section compact-section">
-                <div class="field-grid compact record-top-grid">
-                    <?php renderMonitoringReadonlyField("Date", formatMonitoringDetailDisplayValue(["key" => "date_recorded", "format" => "date"], $record)); ?>
-                    <?php renderMonitoringReadonlyField("Transaction date", formatMonitoringDetailDisplayValue(["key" => "transaction_date", "format" => "date"], $record)); ?>
-                    <?php renderMonitoringReadonlyField("ID number", formatMonitoringDetailDisplayValue(["key" => "identification_number", "format" => "text"], $record)); ?>
+        <?php
+        $recordStatusValue = formatMonitoringDetailDisplayValue(["key" => "status", "format" => "text"], $record);
+        $normalizedRecordStatus = uppercaseText($recordStatusValue);
+        $recordStatusTone = in_array($normalizedRecordStatus, ["DONE", "CANCELLED", "UNPOSTED", "VOIDED", "RESOLVED"], true)
+            ? "complete"
+            : ($normalizedRecordStatus === "PENDING" ? "pending" : "neutral");
+        ?>
+        <div class="record-information-layout">
+            <section class="record-details-panel record-overview-panel">
+                <header class="record-panel-header record-overview-header">
+                    <div>
+                        <span class="record-panel-kicker">Record details</span>
+                        <h2>Record information</h2>
+                    </div>
+                    <div class="summary-actions record-panel-actions">
+                        <?php if ($recordMemoUrl !== ""): ?>
+                        <a href="<?= e($recordMemoUrl) ?>" class="button-link secondary icon-button" data-memo-print-link aria-label="<?= e($recordMemoLabel) ?>" title="<?= e($recordMemoLabel) ?>">
+                            <?= iconSvg("printer") ?>
+                            <span class="sr-only"><?= e($recordMemoLabel) ?></span>
+                        </a>
+                        <?php endif; ?>
+                        <a href="<?= e($recordEditUrl) ?>" class="button-link secondary icon-button" aria-label="Edit record" title="Edit record">
+                            <?= iconSvg("edit") ?>
+                            <span class="sr-only">Edit record</span>
+                        </a>
+                    </div>
+                </header>
+
+                <div class="record-panel-body">
+                    <div class="record-facts-grid">
+                        <?php renderMonitoringRecordFact("ID number", formatMonitoringDetailDisplayValue(["key" => "identification_number", "format" => "text"], $record)); ?>
+                        <?php renderMonitoringRecordFact("Date recorded", formatMonitoringDetailDisplayValue(["key" => "date_recorded", "format" => "date"], $record)); ?>
+                        <?php renderMonitoringRecordFact("Transaction date", formatMonitoringDetailDisplayValue(["key" => "transaction_date", "format" => "date"], $record)); ?>
+                        <?php renderMonitoringRecordFact("Branch", formatMonitoringDetailDisplayValue(["key" => "branch", "format" => "text"], $record)); ?>
+                        <?php renderMonitoringRecordFact("Dealer", formatMonitoringDetailDisplayValue(["key" => "dealer", "format" => "text"], $record)); ?>
+                        <?php renderMonitoringRecordFact("Department", formatMonitoringDetailDisplayValue(["key" => "department", "format" => "text"], $record)); ?>
+                        <?php renderMonitoringRecordFact("Module", formatMonitoringDetailDisplayValue(["key" => "module", "format" => "text"], $record)); ?>
+                        <?php renderMonitoringRecordFact("User", formatMonitoringDetailDisplayValue(["key" => "user_name", "format" => "text"], $record)); ?>
+                        <?php renderMonitoringRecordFact("Client name", formatMonitoringDetailDisplayValue(["key" => "client_name", "format" => "text"], $record)); ?>
+                    </div>
+
+                    <div class="record-panel-divider"></div>
+
+                    <div class="record-facts-grid record-transaction-grid">
+                        <?php renderMonitoringRecordFact("Transaction reference", formatMonitoringDetailDisplayValue(["key" => "invoice_reference", "format" => "text"], $record)); ?>
+                        <?php renderMonitoringRecordFact("Payment reference", formatMonitoringDetailDisplayValue(["key" => "payment_reference", "format" => "text"], $record)); ?>
+                        <?php renderMonitoringRecordFact("Amount", formatMonitoringDetailDisplayValue(["key" => "amount", "format" => "amount"], $record)); ?>
+                    </div>
+
+                    <div class="record-lower-details">
+                        <div class="record-notes-grid">
+                            <?php renderMonitoringRecordFact("Ticket", formatMonitoringDetailDisplayValue(["key" => "ticket", "format" => "text"], $record)); ?>
+                            <?php renderMonitoringRecordFact("Reason", formatMonitoringDetailDisplayValue(["key" => "reason", "format" => "text"], $record), "", true); ?>
+                            <?php renderMonitoringRecordFact("Remarks", formatMonitoringDetailDisplayValue(["key" => "remarks", "format" => "text"], $record), "", true); ?>
+                        </div>
+
+                        <section class="record-processing-inline" aria-labelledby="record-processing-title">
+                            <div class="record-processing-inline-header">
+                                <span class="record-panel-kicker">Workflow</span>
+                                <h3 id="record-processing-title">Processing details</h3>
+                            </div>
+                            <div class="record-processing-grid">
+                                <?php renderMonitoringRecordFact("Processed type", formatMonitoringDetailDisplayValue(["key" => "processed_type", "format" => "text"], $record)); ?>
+                                <?php renderMonitoringRecordFact("System admin", formatMonitoringDetailDisplayValue(["key" => "system_admin", "format" => "text"], $record)); ?>
+                                <?php renderMonitoringRecordFact("Approved by", formatMonitoringDetailDisplayValue(["key" => "approved_by", "format" => "text"], $record)); ?>
+                                <?php renderMonitoringRecordFact("Processed by", formatMonitoringDetailDisplayValue(["key" => "processed_by", "format" => "text"], $record)); ?>
+                            </div>
+                        </section>
+                    </div>
                 </div>
             </section>
 
-            <section class="form-section">
-                <div class="field-grid">
-                    <?php renderMonitoringReadonlyField("Branch", formatMonitoringDetailDisplayValue(["key" => "branch", "format" => "text"], $record)); ?>
-                    <?php renderMonitoringReadonlyField("Dealers", formatMonitoringDetailDisplayValue(["key" => "dealer", "format" => "text"], $record)); ?>
-                    <?php renderMonitoringReadonlyField("Department", formatMonitoringDetailDisplayValue(["key" => "department", "format" => "text"], $record)); ?>
-                    <?php renderMonitoringReadonlyField("Module", formatMonitoringDetailDisplayValue(["key" => "module", "format" => "text"], $record)); ?>
-                </div>
-            </section>
+            <aside class="record-information-sidebar">
+                <section class="record-details-panel record-summary-panel">
+                    <header class="record-panel-header">
+                        <div>
+                            <span class="record-panel-kicker">Record summary</span>
+                            <h2>Current status</h2>
+                        </div>
+                    </header>
+                    <div class="record-summary-list">
+                        <div class="record-summary-row record-summary-status-row">
+                            <span class="record-fact-label">Status</span>
+                            <span class="record-status-value record-status-value-<?= e($recordStatusTone) ?>"><?= e($recordStatusValue) ?></span>
+                        </div>
+                        <?php renderMonitoringRecordFact("Classification", formatMonitoringDetailDisplayValue(["key" => "classification", "format" => "text"], $record), "record-summary-row"); ?>
+                        <?php renderMonitoringRecordFact("Alert", formatMonitoringDetailDisplayValue(["key" => "data_correction_alert", "format" => "text"], $record), "record-summary-row"); ?>
+                        <?php renderMonitoringRecordFact("Offense", formatMonitoringDetailDisplayValue(["key" => "offense", "format" => "text"], $record), "record-summary-row"); ?>
+                        <?php renderMonitoringRecordFact(
+                            "Disciplinary action",
+                            formatMonitoringMemoActionStatusDisplayValue($record)
+                                ?: formatMonitoringDetailDisplayValue(["key" => "disciplinary_action", "format" => "text"], $record),
+                            "record-summary-row"
+                        ); ?>
+                    </div>
+                </section>
 
-            <section class="form-section">
-                <div class="field-grid">
-                    <?php renderMonitoringReadonlyField("User", formatMonitoringDetailDisplayValue(["key" => "user_name", "format" => "text"], $record), "field-span-2"); ?>
-                    <?php renderMonitoringReadonlyField("Client name", formatMonitoringDetailDisplayValue(["key" => "client_name", "format" => "text"], $record), "field-span-2"); ?>
-                    <?php renderMonitoringReadonlyField("Transaction reference", formatMonitoringDetailDisplayValue(["key" => "invoice_reference", "format" => "text"], $record)); ?>
-                    <?php renderMonitoringReadonlyField("Payment reference", formatMonitoringDetailDisplayValue(["key" => "payment_reference", "format" => "text"], $record)); ?>
-                    <?php renderMonitoringReadonlyField("Amount", formatMonitoringDetailDisplayValue(["key" => "amount", "format" => "amount"], $record)); ?>
-                    <?php renderMonitoringReadonlyField("Ticket", formatMonitoringDetailDisplayValue(["key" => "ticket", "format" => "text"], $record)); ?>
-                    <?php renderMonitoringReadonlyField("Reason", formatMonitoringDetailDisplayValue(["key" => "reason", "format" => "text"], $record), "field-span-2", true); ?>
-                    <?php renderMonitoringReadonlyField("System admin", formatMonitoringDetailDisplayValue(["key" => "system_admin", "format" => "text"], $record)); ?>
-                    <?php renderMonitoringReadonlyField("Offense", formatMonitoringDetailDisplayValue(["key" => "offense", "format" => "text"], $record)); ?>
-                    <?php renderMonitoringReadonlyField("Approved by", formatMonitoringDetailDisplayValue(["key" => "approved_by", "format" => "text"], $record)); ?>
-                    <?php renderMonitoringReadonlyField("Processed by", formatMonitoringDetailDisplayValue(["key" => "processed_by", "format" => "text"], $record)); ?>
-                    <?php renderMonitoringReadonlyField("Remarks", formatMonitoringDetailDisplayValue(["key" => "remarks", "format" => "text"], $record), "field-span-2", true); ?>
-                </div>
-            </section>
-
-            <section class="form-section">
-                <div class="field-grid">
-                    <?php renderMonitoringReadonlyField("Classification", formatMonitoringDetailDisplayValue(["key" => "classification", "format" => "text"], $record)); ?>
-                    <?php renderMonitoringReadonlyField("Processed type", formatMonitoringDetailDisplayValue(["key" => "processed_type", "format" => "text"], $record)); ?>
-                    <?php renderMonitoringReadonlyField("Status", formatMonitoringDetailDisplayValue(["key" => "status", "format" => "text"], $record)); ?>
-                    <?php renderMonitoringReadonlyField("Alert", formatMonitoringDetailDisplayValue(["key" => "data_correction_alert", "format" => "text"], $record)); ?>
-                    <?php renderMonitoringReadonlyField(
-                        "Disciplinary action",
-                        formatMonitoringMemoActionStatusDisplayValue($record)
-                            ?: formatMonitoringDetailDisplayValue(["key" => "disciplinary_action", "format" => "text"], $record),
-                        "field-span-2"
-                    ); ?>
-                </div>
-            </section>
+                <section class="record-details-panel record-sidebar-image-panel">
+                    <header class="record-panel-header">
+                        <div>
+                            <span class="record-panel-kicker">Evidence</span>
+                            <h2>Incident report</h2>
+                        </div>
+                        <?php if ($incidentReportImageAvailable): ?>
+                        <a href="<?= e($incidentReportImagePath) ?>" class="button-link secondary icon-button record-sidebar-image-action" target="_blank" rel="noopener" aria-label="Open full incident report image" title="Open full image">
+                            <?= iconSvg("external-link") ?>
+                            <span class="sr-only">Open full image</span>
+                        </a>
+                        <?php endif; ?>
+                    </header>
+                    <div class="record-sidebar-image-body">
+                        <?php if ($incidentReportImageAvailable): ?>
+                        <a href="<?= e($incidentReportImagePath) ?>" class="record-evidence-preview" target="_blank" rel="noopener" aria-label="Open full incident report image">
+                            <img
+                                src="<?= e($incidentReportImagePath) ?>"
+                                alt="Incident report image for <?= e($identificationNumber) ?>"
+                            >
+                        </a>
+                        <?php elseif ($incidentReportImagePath !== ""): ?>
+                        <div class="record-evidence-empty">Saved image unavailable.</div>
+                        <?php else: ?>
+                        <div class="record-evidence-empty">No image uploaded.</div>
+                        <?php endif; ?>
+                    </div>
+                </section>
+            </aside>
         </div>
         <?php endif; ?>
     </section>
-
-    <?php require __DIR__ . "/includes/partials/memo_issuance_history.php"; ?>
 
     <section class="card user-transaction-history">
         <div class="summary-header user-transaction-history-header">
@@ -321,6 +375,7 @@ function renderMonitoringReadonlyField(string $label, string $value, string $fie
                 <?php if ($recordUserName !== ""): ?>
                 <p class="note">
                     <strong><?= e((string) count($userTransactionRecords)) ?></strong> transaction<?= count($userTransactionRecords) === 1 ? "" : "s" ?>
+                    and <strong><?= e((string) count($memoIssuanceRecords)) ?></strong> memo/refresher action<?= count($memoIssuanceRecords) === 1 ? "" : "s" ?>
                     recorded for <strong><?= e(uppercaseText($recordUserName)) ?></strong>.
                 </p>
                 <?php else: ?>
@@ -409,35 +464,10 @@ function renderMonitoringReadonlyField(string $label, string $value, string $fie
             <?php endforeach; ?>
         </ol>
         <?php endif; ?>
+
+        <?php require __DIR__ . "/includes/partials/memo_issuance_history.php"; ?>
     </section>
 
-    <section class="card">
-        <div class="summary-header">
-            <div>
-                <h2>Incident Report Image</h2>
-            </div>
-            <?php if ($incidentReportImageAvailable): ?>
-            <a href="<?= e($incidentReportImagePath) ?>" class="button-link secondary icon-button" target="_blank" rel="noopener" aria-label="Open full image" title="Open full image">
-                <?= iconSvg("external-link") ?>
-                <span class="sr-only">Open full image</span>
-            </a>
-            <?php endif; ?>
-        </div>
-
-        <?php if ($incidentReportImageAvailable): ?>
-        <div class="record-image-panel">
-            <img
-                src="<?= e($incidentReportImagePath) ?>"
-                alt="Incident report image for <?= e($identificationNumber) ?>"
-                class="record-image"
-            >
-        </div>
-        <?php elseif ($incidentReportImagePath !== ""): ?>
-        <p class="note">An incident report image was saved for this record, but the file is currently unavailable.</p>
-        <?php else: ?>
-        <p class="note">No incident report image was uploaded for this record.</p>
-        <?php endif; ?>
-    </section>
 <?php endif; ?>
 </main>
 
