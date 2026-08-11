@@ -2132,12 +2132,12 @@ body.page-system-monitoring:not(.page-print-summary) .summary-header.user-transa
     background: var(--brand);
 }
 
-.transaction-activity-item:not(:last-child) .transaction-activity-marker::after {
+.transaction-activity-item:not(:last-child)::before {
     content: "";
     position: absolute;
-    top: 12px;
-    bottom: -34px;
-    left: 3px;
+    top: 24px;
+    bottom: -24px;
+    left: 5px;
     width: 2px;
     background: var(--border);
 }
@@ -2227,7 +2227,7 @@ body.page-system-monitoring:not(.page-print-summary) .summary-header.user-transa
 }
 
 .memo-issuance-table {
-    min-width: 880px;
+    min-width: 720px;
 }
 
 .memo-issuance-table th:first-child,
@@ -2235,6 +2235,28 @@ body.page-system-monitoring:not(.page-print-summary) .summary-header.user-transa
 .memo-issuance-table th:last-child,
 .memo-issuance-table td:last-child {
     text-align: center;
+}
+
+.memo-status-date-group,
+.memo-printed-action-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.memo-status-control {
+    display: inline-flex;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+.memo-action-date,
+.memo-printed-action-group > span {
+    min-width: max-content;
 }
 
 .memo-issuance-table input[type="date"] {
@@ -2286,6 +2308,28 @@ body.page-system-monitoring:not(.page-print-summary) .summary-header.user-transa
     height: 17px;
 }
 
+.memo-received-action {
+    width: auto;
+    height: auto;
+}
+
+.memo-received-action span,
+.memo-received-complete span {
+    width: auto;
+    min-width: max-content;
+    padding: 0 10px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.memo-received-action span {
+    color: var(--brand);
+}
+
+.memo-received-complete {
+    width: auto;
+}
+
 .memo-issued-check:hover span,
 .memo-issued-check input:focus-visible + span {
     border-color: var(--brand);
@@ -2300,6 +2344,13 @@ body.page-system-monitoring:not(.page-print-summary) .summary-header.user-transa
 
 .memo-issued-check-complete {
     cursor: default;
+}
+
+.memo-issued-check.memo-received-complete input:checked + span,
+.memo-issued-check.memo-issued-check-complete.memo-received-complete span {
+    border-color: #218838;
+    background: #218838;
+    color: #ffffff;
 }
 
 .memo-history-print {

@@ -301,7 +301,7 @@
         if (
             event.target
             && event.target.hasAttribute("data-memo-issued-confirm")
-            && !window.confirm("Confirm memo issuance for the selected date?")
+            && !window.confirm("Confirm that the memo was received on the selected date?")
         ) {
             event.preventDefault();
             var memoIssuedCheckbox = event.target.querySelector('input[type="checkbox"]');

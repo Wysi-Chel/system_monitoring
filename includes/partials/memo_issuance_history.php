@@ -13,13 +13,11 @@
         <table class="compact-summary-table memo-issuance-table">
             <thead>
                 <tr>
-                    <th>Status</th>
-                    <th>Action Date</th>
+                    <th>Status / Action Date</th>
                     <th>Date Recorded</th>
                     <th>ID Number</th>
                     <th>Action</th>
-                    <th>Printed</th>
-                    <th>Print</th>
+                    <th>Printed / Print</th>
                 </tr>
             </thead>
             <tbody>
@@ -46,6 +44,8 @@
                     ?>
                 <tr>
                     <td class="memo-check-cell">
+                        <div class="memo-status-date-group">
+                            <div class="memo-status-control">
                         <?php if ($isRefresherCourse && $refresherCompleted): ?>
                         <label class="memo-issued-check memo-issued-check-complete" title="Refresher course done">
                             <input type="checkbox" checked disabled aria-label="Refresher Course done">
@@ -69,9 +69,9 @@
                             </button>
                         </form>
                         <?php elseif ($memoIssued): ?>
-                        <label class="memo-issued-check memo-issued-check-complete">
-                            <input type="checkbox" checked disabled aria-label="<?= e($memoAction) ?> issued">
-                            <span><?= iconSvg("check") ?></span>
+                        <label class="memo-issued-check memo-issued-check-complete memo-received-complete" title="<?= e($memoAction) ?> received">
+                            <input type="checkbox" checked disabled aria-label="<?= e($memoAction) ?> received">
+                            <span>Received</span>
                         </label>
                         <?php else: ?>
                         <form id="<?= e($memoIssueFormId) ?>" action="update_monitoring_action.php" method="POST" class="monitoring-action-form memo-issued-form" data-memo-issued-confirm>
@@ -79,18 +79,18 @@
                             <input type="hidden" name="record_id" value="<?= e($memoRecordId) ?>">
                             <input type="hidden" name="mark_memo_issued" value="1">
                             <input type="hidden" name="return_identification_number" value="<?= e($identificationNumber) ?>">
-                            <label class="memo-issued-check">
+                            <label class="memo-issued-check memo-received-action" title="Mark <?= e($memoAction) ?> as received">
                                 <input
                                     type="checkbox"
-                                    aria-label="Mark <?= e($memoAction) ?> as issued"
+                                    aria-label="Mark <?= e($memoAction) ?> as received"
                                     onchange="if (this.checked) { this.form.requestSubmit(); }"
                                 >
-                                <span><?= iconSvg("check") ?></span>
+                                <span>Mark as received</span>
                             </label>
                         </form>
                         <?php endif; ?>
-                    </td>
-                    <td>
+                            </div>
+                            <div class="memo-action-date">
                         <?php if ($isRefresherCourse && $refresherCompletedAt !== ""): ?>
                         <?= e(formatDisplayDate($refresherCompletedAt)) ?>
                         <?php elseif ($isRefresherCourse): ?>
@@ -109,31 +109,33 @@
                             title="Memo issue date"
                         >
                         <?php endif; ?>
+                            </div>
+                        </div>
                     </td>
                     <td><?= e(formatMonitoringDetailDisplayValue(["key" => "date_recorded", "format" => "date"], $memoRow)) ?></td>
                     <td><?= e($memoIdentificationNumber !== "" ? $memoIdentificationNumber : "N/A") ?></td>
                     <td><?= e($memoAction) ?></td>
                     <td>
-                        <?= e(
-                            $isRefresherCourse
-                                ? "N/A"
-                                : ($memoPrintedAt !== "" ? formatDisplayTimestamp($memoPrintedAt) : "Not printed")
-                        ) ?>
-                    </td>
-                    <td>
-                        <?php if ($isRefresherCourse): ?>
-                        <span class="note">N/A</span>
-                        <?php else: ?>
-                        <a
-                            href="<?= e($memoPrintUrl) ?>"
-                            class="button-link secondary icon-button memo-history-print"
-                            data-memo-print-link
-                            aria-label="<?= e($memoPrintedAt !== "" ? "Reprint " . $memoAction : "Print " . $memoAction) ?>"
-                            title="<?= e($memoPrintedAt !== "" ? "Reprint memo" : "Print memo") ?>"
-                        >
-                            <?= iconSvg("printer") ?>
-                        </a>
-                        <?php endif; ?>
+                        <div class="memo-printed-action-group">
+                            <?php if (!$isRefresherCourse): ?>
+                            <a
+                                href="<?= e($memoPrintUrl) ?>"
+                                class="button-link secondary icon-button memo-history-print"
+                                data-memo-print-link
+                                aria-label="<?= e($memoPrintedAt !== "" ? "Reprint " . $memoAction : "Print " . $memoAction) ?>"
+                                title="<?= e($memoPrintedAt !== "" ? "Reprint memo" : "Print memo") ?>"
+                            >
+                                <?= iconSvg("printer") ?>
+                            </a>
+                            <?php endif; ?>
+                            <span>
+                                <?= e(
+                                    $isRefresherCourse
+                                        ? "N/A"
+                                        : ($memoPrintedAt !== "" ? formatDisplayTimestamp($memoPrintedAt) : "Not printed")
+                                ) ?>
+                            </span>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>
