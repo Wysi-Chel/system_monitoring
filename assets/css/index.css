@@ -2251,7 +2251,22 @@ body.page-system-monitoring:not(.page-print-summary) .summary-header.user-transa
 .memo-status-control {
     display: inline-flex;
     justify-content: center;
+    width: 154px;
     flex: 0 0 auto;
+}
+
+.memo-status-control > .memo-issued-form,
+.memo-status-control .memo-issued-check,
+.memo-status-control .memo-issued-check span,
+.memo-status-control button {
+    width: 100%;
+}
+
+.memo-status-control .memo-issued-check,
+.memo-status-control .memo-issued-check span,
+.memo-status-control button {
+    height: 38px;
+    min-height: 38px;
 }
 
 .memo-action-date,
