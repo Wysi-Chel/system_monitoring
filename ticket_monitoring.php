@@ -16,7 +16,7 @@ $fixedBranch = $company["fixed_branch"] ?? null;
 $showBranchSelector = $fixedBranch === null;
 ensureTicketMonitoringTable($pdo, $company);
 $ticketEncodeDealerOptions = array_values(array_filter(
-    $dealerOptions,
+    $ticketDealerOptions,
     static function (string $dealer) use ($company): bool {
         $companyKey = strtolower(trim((string) ($company["key"] ?? "")));
 
@@ -25,7 +25,7 @@ $ticketEncodeDealerOptions = array_values(array_filter(
         }
 
         if ($companyKey === "hyundai") {
-            return $dealer === "NGSC";
+            return in_array($dealer, ["NGSC", "All Dealers"], true);
         }
 
         return true;
@@ -125,7 +125,7 @@ $ticketFormDefaults = [
                         <label for="ticket-form-branch">Branch</label>
                         <select id="ticket-form-branch" name="branch" required>
                             <option value="">Select branch</option>
-                            <?php foreach ($branchOptions as $option): ?>
+                            <?php foreach ($ticketBranchOptions as $option): ?>
                             <option value="<?= e($option) ?>"><?= e($option) ?></option>
                             <?php endforeach; ?>
                         </select>

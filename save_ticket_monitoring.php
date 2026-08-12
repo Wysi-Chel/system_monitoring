@@ -36,8 +36,8 @@ function normalizeTicketDate(?string $value): ?string
     return $date && $date->format("Y-m-d") === $value ? $value : null;
 }
 
-$branch = $company["fixed_branch"] ?? normalizeTicketField($_POST["branch"] ?? "", true);
-$dealer = normalizeAllowedFilter($_POST["dealer"] ?? "", $dealerOptions);
+$branch = $company["fixed_branch"] ?? normalizeAllowedFilter($_POST["branch"] ?? "", $ticketBranchOptions);
+$dealer = normalizeAllowedFilter($_POST["dealer"] ?? "", $ticketDealerOptions);
 $module = normalizeAllowedFilter($_POST["module"] ?? "", $ticketModuleOptions);
 $ticketNumber = normalizeTicketField($_POST["ticket_number"] ?? "", true);
 $ticketDescription = normalizeTicketField($_POST["ticket_description"] ?? "");

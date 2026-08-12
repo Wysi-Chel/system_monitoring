@@ -1,6 +1,8 @@
 <?php
 $branchOptions = ["GSC", "GLA", "KID"];
 $dealerOptions = ["MGSC", "NGSC", "MKC"];
+$ticketBranchOptions = [...$branchOptions, "All Branch"];
+$ticketDealerOptions = [...$dealerOptions, "All Dealers"];
 $departmentOptions = ["Accounting", "Sales", "Service", "Parts", "BNC", "CNC", "Manila", "BRP"];
 $moduleOptions = ["AMIS", "CMIS", "SMIS", "PMIS", "CSMS", "All Modules"];
 $ticketModuleOptions = $moduleOptions;
