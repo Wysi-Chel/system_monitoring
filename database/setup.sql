@@ -94,3 +94,47 @@ CREATE TABLE IF NOT EXISTS `ntr_ticket_monitoring` (
     resolved_at DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS `micei_access_requests` (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    reference_no VARCHAR(40) NOT NULL,
+    requester_name VARCHAR(150) NOT NULL,
+    dealer VARCHAR(100) NOT NULL,
+    department VARCHAR(100) NOT NULL,
+    dmis_username VARCHAR(100) NOT NULL,
+    module VARCHAR(100) NOT NULL,
+    description TEXT NOT NULL,
+    status VARCHAR(40) NOT NULL DEFAULT 'Pending',
+    review_notes TEXT NULL,
+    reviewed_by VARCHAR(150) NULL,
+    reviewed_at DATETIME NULL,
+    submitted_ip VARCHAR(45) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_access_request_reference (reference_no),
+    INDEX idx_access_request_status (status),
+    INDEX idx_access_request_username (dmis_username),
+    INDEX idx_access_request_created (created_at)
+);
+
+CREATE TABLE IF NOT EXISTS `ntr_access_requests` (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    reference_no VARCHAR(40) NOT NULL,
+    requester_name VARCHAR(150) NOT NULL,
+    dealer VARCHAR(100) NOT NULL,
+    department VARCHAR(100) NOT NULL,
+    dmis_username VARCHAR(100) NOT NULL,
+    module VARCHAR(100) NOT NULL,
+    description TEXT NOT NULL,
+    status VARCHAR(40) NOT NULL DEFAULT 'Pending',
+    review_notes TEXT NULL,
+    reviewed_by VARCHAR(150) NULL,
+    reviewed_at DATETIME NULL,
+    submitted_ip VARCHAR(45) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_access_request_reference (reference_no),
+    INDEX idx_access_request_status (status),
+    INDEX idx_access_request_username (dmis_username),
+    INDEX idx_access_request_created (created_at)
+);

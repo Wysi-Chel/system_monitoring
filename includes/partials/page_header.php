@@ -7,6 +7,8 @@ $defaultHeaderDescriptions = [
     "ticket_monitoring.php" => "Create, review, and follow support tickets from submission to resolution.",
     "monitoring_record.php" => "Review the complete activity, supporting details, and actions for a monitoring record.",
     "promote_to_live.php" => "Review test changes before promoting them to the live monitoring system.",
+    "access_requests.php" => "Review public DMIS access requests and record each decision.",
+    "access_request_view.php" => "Review the request details and record an access decision.",
 ];
 $headerDescription = $headerDescription ?? ($defaultHeaderDescriptions[$currentScript] ?? "");
 $showCompanySwitch = $showCompanySwitch ?? true;
@@ -44,6 +46,18 @@ if ($currentScript === "ticket_monitoring.php") {
     $topbarActionUrl = $summaryUrl;
     $topbarActionLabel = "Back to summary";
     $topbarActionIcon = "arrow-left";
+} elseif ($currentScript === "access_requests.php") {
+    $topbarActionUrl = "public_access_request.php";
+    $topbarActionLabel = "Open public form";
+    $topbarActionIcon = "external-link";
+    $sidebarPrimaryActionUrl = "public_access_request.php";
+    $sidebarPrimaryActionLabel = "Open Public Form";
+    $sidebarSummaryActionUrl = "#access-request-summary";
+} elseif ($currentScript === "access_request_view.php") {
+    $topbarActionUrl = buildUrl("access_requests.php", ["company" => $company["key"]]) . "#access-request-summary";
+    $topbarActionLabel = "Back to requests";
+    $topbarActionIcon = "arrow-left";
+    $sidebarSummaryActionUrl = $topbarActionUrl;
 } elseif ($currentScript === "promote_to_live.php") {
     $topbarActionUrl = $monitoringHomeUrl;
     $topbarActionLabel = "Back to dashboard";
@@ -64,6 +78,13 @@ $navItems = [
         "href" => $ticketNavUrl,
         "script" => "ticket_monitoring.php",
         "visible" => companySupportsTicketMonitoring($company),
+    ],
+    [
+        "label" => "Access Requests",
+        "icon" => "lock",
+        "href" => buildUrl("access_requests.php", ["company" => $company["key"]]),
+        "script" => "access_requests.php",
+        "scripts" => ["access_requests.php", "access_request_view.php"],
     ],
     [
         "label" => "Promote To Live",

@@ -95,6 +95,8 @@ $companyConfigs = [
         "logo_alt" => "Mitsubishi Motors Drive your Ambition",
         "memo_template" => "MGSC_VerbalWarningMemo.docx",
         "export_slug" => "micei",
+        "access_request_table_name" => "micei_access_requests",
+        "access_request_dealers" => ["MGSC", "MKC", "All Dealers"],
     ],
     "hyundai" => [
         "key" => "hyundai",
@@ -111,6 +113,8 @@ $companyConfigs = [
         "logo_alt" => "Hyundai Company",
         "memo_template" => "NGSC_VerbalWarningMemo.docx",
         "export_slug" => "ntr",
+        "access_request_table_name" => "ntr_access_requests",
+        "access_request_dealers" => ["NGSC"],
     ],
 ];
 
@@ -522,6 +526,38 @@ function backfillTicketMonitoringModuleValues(PDO $pdo, string $tableNameSql): v
          WHERE module IS NULL
             OR TRIM(module) = ''
             OR UPPER(TRIM(module)) IN ('ALL MODULE', 'ALL MODULES')"
+    );
+}
+
+function ensureAccessRequestTable(PDO $pdo, array $company): void
+{
+    if (!isset($company["access_request_table_name"]) || !is_string($company["access_request_table_name"]) || trim($company["access_request_table_name"]) === "") {
+        throw new RuntimeException("Access request table is not configured for this company.");
+    }
+
+    $tableNameSql = quoteMysqlIdentifier($company["access_request_table_name"]);
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS {$tableNameSql} (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            reference_no VARCHAR(40) NOT NULL,
+            requester_name VARCHAR(150) NOT NULL,
+            dealer VARCHAR(100) NOT NULL,
+            department VARCHAR(100) NOT NULL,
+            dmis_username VARCHAR(100) NOT NULL,
+            module VARCHAR(100) NOT NULL,
+            description TEXT NOT NULL,
+            status VARCHAR(40) NOT NULL DEFAULT 'Pending',
+            review_notes TEXT NULL,
+            reviewed_by VARCHAR(150) NULL,
+            reviewed_at DATETIME NULL,
+            submitted_ip VARCHAR(45) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY uniq_access_request_reference (reference_no),
+            INDEX idx_access_request_status (status),
+            INDEX idx_access_request_username (dmis_username),
+            INDEX idx_access_request_created (created_at)
+        )"
     );
 }
 

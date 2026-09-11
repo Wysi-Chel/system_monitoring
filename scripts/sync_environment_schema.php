@@ -7,6 +7,8 @@ foreach ($companyConfigs as $company) {
     if (companySupportsTicketMonitoring($company)) {
         ensureTicketMonitoringTable($pdo, $company);
     }
+
+    ensureAccessRequestTable($pdo, $company);
 }
 
 echo "Environment: " . getApplicationEnvironmentName() . PHP_EOL;

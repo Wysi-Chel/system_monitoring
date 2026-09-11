@@ -136,3 +136,25 @@ HELPER SCRIPT:
 
 You can manually sync the current environment schema anytime with:
   php scripts\sync_environment_schema.php
+
+DMIS ACCESS REQUESTS:
+
+Moved here from the MICEI MIS portal (micei_mis).
+
+- Public form, no login required:
+  http://localhost/system_monitoring/public_access_request.php
+  Linked from the MICEI public request portal (micei_mis/public_requests.php).
+
+- Staff review, under Access Requests in the sidebar:
+  access_requests.php               - list, search, and status filter per company workspace
+  access_request_view.php           - request details and review decision
+  update_access_request_status.php  - saves the review and records the signed-in reviewer
+
+- Requests are routed by dealer:
+  MGSC, MKC, and All Dealers -> micei_access_requests  (Mitsubishi workspace)
+  NGSC                       -> ntr_access_requests    (Hyundai workspace)
+
+- Reference numbers follow DAR-MICEI-YYYY-NNNN and DAR-NTR-YYYY-NNNN.
+
+- Both tables are created automatically on first use and by:
+  php scripts\sync_environment_schema.php
