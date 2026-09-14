@@ -343,7 +343,7 @@ $renderReviewNotes = static function (string $label, string $notes): void {
     <section class="card" id="access-request-implementation-review">
         <div class="summary-header">
             <div>
-                <h2>Implementation</h2>
+                <h2>Implementation Notes</h2>
                 <?php if ($isImplemented): ?>
                 <div class="dashboard-activity-meta">Implemented by <?= e($record["implemented_by"]) ?> on <?= e(formatDisplayTimestamp($record["implemented_at"])) ?></div>
                 <?php endif; ?>
@@ -358,7 +358,6 @@ $renderReviewNotes = static function (string $label, string $notes): void {
         <?php endif; ?>
 
         <?php if ($canMarkImplemented): ?>
-        <p class="field-note access-review-hint">Set up the approved access shown in the IT review, then mark it as implemented. The accesses are recorded for this user once marked.</p>
         <form action="update_access_request_status.php" method="POST" class="access-request-review-form">
             <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
             <input type="hidden" name="company" value="<?= e($company["key"]) ?>">
@@ -366,7 +365,6 @@ $renderReviewNotes = static function (string $label, string $notes): void {
             <input type="hidden" name="review_type" value="implementation">
 
             <div class="field access-review-notes-field">
-                <label for="access-implementation-notes">Implementation notes</label>
                 <textarea id="access-implementation-notes" name="implementation_notes" rows="3" maxlength="<?= e(ACCESS_REQUEST_REVIEW_NOTES_MAX_LENGTH) ?>" placeholder="Account changes made, effective date, or follow-up"><?= e($implementationNotes) ?></textarea>
             </div>
 
