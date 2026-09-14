@@ -5,6 +5,8 @@ const ACCESS_REQUEST_SUBMIT_COOLDOWN_SECONDS = 45;
 const ACCESS_REQUEST_NAME_MAX_LENGTH = 150;
 const ACCESS_REQUEST_USERNAME_MAX_LENGTH = 100;
 const ACCESS_REQUEST_DESCRIPTION_MAX_LENGTH = 2000;
+const ACCESS_REQUEST_ACCESS_DETAILS_MAX_LENGTH = 255;
+const ACCESS_REQUEST_REVIEW_NOTES_MAX_LENGTH = 2000;
 
 function getAccessRequestCsrfToken(): string
 {
@@ -96,6 +98,101 @@ function getAccessRequestStatusClass(string $status): string
     return $statusClass !== "" ? $statusClass : "unknown";
 }
 
+function getAccessRequestManilaTimestamp(): string
+{
+    return (new DateTimeImmutable("now", new DateTimeZone("Asia/Manila")))->format("Y-m-d H:i:s");
+}
+
+function normalizeAccessRequestModules($selectedModules, array $moduleOptions): array
+{
+    if (!is_array($selectedModules)) {
+        return [];
+    }
+
+    // Follow the option order so the stored list reads the same regardless of tick order.
+    return array_values(array_filter(
+        $moduleOptions,
+        static fn(string $option): bool => in_array($option, $selectedModules, true)
+    ));
+}
+
+function decodeAccessRequestGrantAccess(?string $value): array
+{
+    $decoded = json_decode((string) $value, true);
+    if (!is_array($decoded)) {
+        return [];
+    }
+
+    $grantAccess = [];
+    foreach ($decoded as $module => $details) {
+        $module = trim((string) $module);
+        if ($module !== "" && !is_array($details)) {
+            $grantAccess[$module] = mb_strtoupper(trim((string) $details), 'UTF-8');
+        }
+    }
+
+    return $grantAccess;
+}
+
+function buildAccessRequestGrantAccess(array $input, array $moduleOptions): array
+{
+    $accessDetails = is_array($input["grant_access"] ?? null) ? $input["grant_access"] : [];
+    $grantAccess = [];
+
+    foreach (normalizeAccessRequestModules($input["grant_modules"] ?? [], $moduleOptions) as $module) {
+        $details = $accessDetails[$module] ?? "";
+        $grantAccess[$module] = is_string($details) ? mb_strtoupper(trim($details), 'UTF-8') : "";
+    }
+
+    return $grantAccess;
+}
+
+function buildAccessRequestComparisonRows(array $requestedModules, array $grantAccess): array
+{
+    $rows = [];
+
+    foreach ($grantAccess as $module => $details) {
+        $rows[] = [
+            "module" => $module,
+            "details" => $details,
+            "change" => in_array($module, $requestedModules, true) ? "" : "added",
+        ];
+    }
+
+    foreach ($requestedModules as $module) {
+        if (!array_key_exists($module, $grantAccess)) {
+            $rows[] = [
+                "module" => $module,
+                "details" => "",
+                "change" => "not_included",
+            ];
+        }
+    }
+
+    return $rows;
+}
+
+function getAccessRequestRecordStatus(array $record): string
+{
+    return trim((string) ($record["status"] ?? ""));
+}
+
+function canSubmitAccessRequestItReview(array $record): bool
+{
+    // IT can revise the access to grant until the final review approves it.
+    return in_array(getAccessRequestRecordStatus($record), ["Pending", "For Approval", "Declined"], true);
+}
+
+function canSaveAccessRequestFinalReview(array $record): bool
+{
+    return getAccessRequestRecordStatus($record) === "For Approval";
+}
+
+function canMarkAccessRequestImplemented(array $record): bool
+{
+    return getAccessRequestRecordStatus($record) === "Approved";
+}
+
 function buildNextAccessRequestReference(PDO $pdo, array $company): string
 {
     $tableNameSql = quoteMysqlIdentifier($company["access_request_table_name"]);
@@ -128,6 +225,7 @@ function insertAccessRequest(PDO $pdo, array $company, array $values): string
             dmis_username,
             module,
             description,
+            requested_by,
             status,
             submitted_ip
         ) VALUES (
@@ -138,6 +236,7 @@ function insertAccessRequest(PDO $pdo, array $company, array $values): string
             :dmis_username,
             :module,
             :description,
+            :requested_by,
             :status,
             :submitted_ip
         )"
@@ -157,6 +256,7 @@ function insertAccessRequest(PDO $pdo, array $company, array $values): string
                 ":dmis_username" => $values["dmis_username"],
                 ":module" => $values["module"],
                 ":description" => $values["description"],
+                ":requested_by" => $values["requested_by"],
                 ":status" => $values["status"],
                 ":submitted_ip" => $values["submitted_ip"],
             ]);
@@ -204,6 +304,7 @@ function buildAccessRequestWhereClause(array $filters, array &$bindings): string
             "module",
             "department",
             "description",
+            "requested_by",
         ];
 
         $searchParts = [];
@@ -292,6 +393,22 @@ function countAccessRequestsByStatus(PDO $pdo, string $tableNameSql, array $stat
     return $counts;
 }
 
+function fetchAccessRequestNotifications(PDO $pdo, string $tableNameSql, array $statuses, int $limit = 5): array
+{
+    $notifications = [];
+
+    foreach ($statuses as $status) {
+        $filters = ["search" => "", "dealer" => "", "status" => $status];
+        $count = countAccessRequests($pdo, $tableNameSql, $filters);
+        $notifications[$status] = [
+            "count" => $count,
+            "records" => $count > 0 ? fetchAccessRequests($pdo, $tableNameSql, $filters, [], $limit) : [],
+        ];
+    }
+
+    return $notifications;
+}
+
 function fetchAccessRequestById(PDO $pdo, string $tableNameSql, int $id): ?array
 {
     $stmt = $pdo->prepare("SELECT * FROM {$tableNameSql} WHERE id = :id LIMIT 1");
@@ -302,29 +419,170 @@ function fetchAccessRequestById(PDO $pdo, string $tableNameSql, int $id): ?array
     return $record === false ? null : $record;
 }
 
-function updateAccessRequestReview(
+function submitAccessRequestItReview(
     PDO $pdo,
     string $tableNameSql,
     int $id,
-    string $status,
-    ?string $reviewNotes,
+    array $grantAccess,
+    ?string $itNotes,
     string $reviewedBy
 ): void {
-    $reviewedAt = (new DateTimeImmutable("now", new DateTimeZone("Asia/Manila")))->format("Y-m-d H:i:s");
+    // Submitting, including a resubmission after a decline, asks the final review for a new decision.
     $stmt = $pdo->prepare(
         "UPDATE {$tableNameSql}
-         SET status = :status,
-             review_notes = :review_notes,
-             reviewed_by = :reviewed_by,
-             reviewed_at = :reviewed_at
-         WHERE id = :id"
+         SET grant_access = :grant_access,
+             it_notes = :it_notes,
+             it_reviewed_by = :it_reviewed_by,
+             it_reviewed_at = :it_reviewed_at,
+             final_decision = NULL,
+             status = 'For Approval'
+         WHERE id = :id
+           AND status IN ('Pending', 'For Approval', 'Declined')"
     );
-    $stmt->bindValue(":status", $status, PDO::PARAM_STR);
-    $stmt->bindValue(":review_notes", $reviewNotes, $reviewNotes === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
-    $stmt->bindValue(":reviewed_by", $reviewedBy, PDO::PARAM_STR);
-    $stmt->bindValue(":reviewed_at", $reviewedAt, PDO::PARAM_STR);
+    $stmt->bindValue(":grant_access", json_encode($grantAccess, JSON_UNESCAPED_UNICODE), PDO::PARAM_STR);
+    $stmt->bindValue(":it_notes", $itNotes, $itNotes === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+    $stmt->bindValue(":it_reviewed_by", $reviewedBy, PDO::PARAM_STR);
+    $stmt->bindValue(":it_reviewed_at", getAccessRequestManilaTimestamp(), PDO::PARAM_STR);
     $stmt->bindValue(":id", $id, PDO::PARAM_INT);
     $stmt->execute();
+}
+
+function saveAccessRequestFinalReview(
+    PDO $pdo,
+    string $tableNameSql,
+    int $id,
+    string $decision,
+    ?string $finalNotes,
+    string $reviewedBy,
+    string $reviewedItSubmissionAt
+): bool {
+    // The decision only applies to the IT submission the reviewer saw; a resubmission changes it_reviewed_at.
+    $stmt = $pdo->prepare(
+        "UPDATE {$tableNameSql}
+         SET final_decision = :final_decision,
+             final_notes = :final_notes,
+             final_reviewed_by = :final_reviewed_by,
+             final_reviewed_at = :final_reviewed_at,
+             status = :status
+         WHERE id = :id
+           AND status = 'For Approval'
+           AND it_reviewed_at = :it_reviewed_at"
+    );
+    $stmt->bindValue(":final_decision", $decision, PDO::PARAM_STR);
+    $stmt->bindValue(":final_notes", $finalNotes, $finalNotes === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+    $stmt->bindValue(":final_reviewed_by", $reviewedBy, PDO::PARAM_STR);
+    $stmt->bindValue(":final_reviewed_at", getAccessRequestManilaTimestamp(), PDO::PARAM_STR);
+    $stmt->bindValue(":status", $decision, PDO::PARAM_STR);
+    $stmt->bindValue(":id", $id, PDO::PARAM_INT);
+    $stmt->bindValue(":it_reviewed_at", $reviewedItSubmissionAt, PDO::PARAM_STR);
+    $stmt->execute();
+
+    return $stmt->rowCount() > 0;
+}
+
+function markAccessRequestImplemented(
+    PDO $pdo,
+    array $company,
+    int $id,
+    ?string $implementationNotes,
+    string $implementedBy
+): bool {
+    $requestTableNameSql = quoteMysqlIdentifier($company["access_request_table_name"]);
+    $userAccessTableNameSql = quoteMysqlIdentifier($company["user_access_table_name"]);
+    $implementedAt = getAccessRequestManilaTimestamp();
+
+    $pdo->beginTransaction();
+
+    try {
+        // Lock the request so its approved access is recorded exactly once.
+        $recordStmt = $pdo->prepare("SELECT * FROM {$requestTableNameSql} WHERE id = :id LIMIT 1 FOR UPDATE");
+        $recordStmt->bindValue(":id", $id, PDO::PARAM_INT);
+        $recordStmt->execute();
+        $record = $recordStmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($record === false || !canMarkAccessRequestImplemented($record)) {
+            $pdo->rollBack();
+            return false;
+        }
+
+        $updateStmt = $pdo->prepare(
+            "UPDATE {$requestTableNameSql}
+             SET it_status = 'Implemented',
+                 implementation_notes = :implementation_notes,
+                 implemented_by = :implemented_by,
+                 implemented_at = :implemented_at,
+                 status = 'Implemented'
+             WHERE id = :id"
+        );
+        $updateStmt->bindValue(":implementation_notes", $implementationNotes, $implementationNotes === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $updateStmt->bindValue(":implemented_by", $implementedBy, PDO::PARAM_STR);
+        $updateStmt->bindValue(":implemented_at", $implementedAt, PDO::PARAM_STR);
+        $updateStmt->bindValue(":id", $id, PDO::PARAM_INT);
+        $updateStmt->execute();
+
+        $accessStmt = $pdo->prepare(
+            "INSERT INTO {$userAccessTableNameSql} (
+                dmis_username,
+                requester_name,
+                dealer,
+                department,
+                module,
+                access_details,
+                access_request_id,
+                reference_no,
+                implemented_by,
+                approved_by,
+                granted_at
+            ) VALUES (
+                :dmis_username,
+                :requester_name,
+                :dealer,
+                :department,
+                :module,
+                :access_details,
+                :access_request_id,
+                :reference_no,
+                :implemented_by,
+                :approved_by,
+                :granted_at
+            )
+            ON DUPLICATE KEY UPDATE
+                requester_name = VALUES(requester_name),
+                dealer = VALUES(dealer),
+                department = VALUES(department),
+                access_details = VALUES(access_details),
+                access_request_id = VALUES(access_request_id),
+                reference_no = VALUES(reference_no),
+                implemented_by = VALUES(implemented_by),
+                approved_by = VALUES(approved_by),
+                granted_at = VALUES(granted_at)"
+        );
+
+        foreach (decodeAccessRequestGrantAccess($record["grant_access"] ?? null) as $module => $details) {
+            $accessStmt->execute([
+                ":dmis_username" => $record["dmis_username"],
+                ":requester_name" => $record["requester_name"],
+                ":dealer" => $record["dealer"],
+                ":department" => $record["department"],
+                ":module" => $module,
+                ":access_details" => $details !== "" ? $details : null,
+                ":access_request_id" => (int) $record["id"],
+                ":reference_no" => $record["reference_no"],
+                ":implemented_by" => $implementedBy,
+                ":approved_by" => $record["final_reviewed_by"],
+                ":granted_at" => $implementedAt,
+            ]);
+        }
+
+        $pdo->commit();
+        return true;
+    } catch (Throwable $exception) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+
+        throw $exception;
+    }
 }
 
 function buildAccessRequestFilterBadges(array $filters): array
@@ -344,4 +602,118 @@ function buildAccessRequestFilterBadges(array $filters): array
     }
 
     return $badges;
+}
+
+function fetchUserAccessesByUsername(PDO $pdo, string $tableNameSql, string $dmisUsername): array
+{
+    $stmt = $pdo->prepare(
+        "SELECT *
+         FROM {$tableNameSql}
+         WHERE dmis_username = :dmis_username
+         ORDER BY module ASC"
+    );
+    $stmt->execute([":dmis_username" => $dmisUsername]);
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function buildUserAccessWhereClause(array $filters, array &$bindings): string
+{
+    $conditions = [];
+    $bindings = [];
+
+    if (($filters["search"] ?? "") !== "") {
+        $searchValue = "%" . escapeLikeTerm($filters["search"]) . "%";
+        $searchColumns = [
+            "dmis_username",
+            "requester_name",
+            "department",
+            "module",
+            "access_details",
+            "reference_no",
+        ];
+
+        $searchParts = [];
+        foreach ($searchColumns as $index => $columnName) {
+            $paramKey = "user_access_search_" . $index;
+            $searchParts[] = $columnName . " LIKE :" . $paramKey . " ESCAPE '\\\\'";
+            $bindings[$paramKey] = $searchValue;
+        }
+
+        $conditions[] = "(" . implode(" OR ", $searchParts) . ")";
+    }
+
+    if (($filters["dealer"] ?? "") !== "") {
+        $conditions[] = "dealer = :dealer";
+        $bindings["dealer"] = $filters["dealer"];
+    }
+
+    return $conditions === [] ? "" : " WHERE " . implode(" AND ", $conditions);
+}
+
+function countUserAccessUsers(PDO $pdo, string $tableNameSql, array $filters): int
+{
+    $bindings = [];
+    $whereClause = buildUserAccessWhereClause($filters, $bindings);
+    $stmt = $pdo->prepare("SELECT COUNT(DISTINCT dmis_username) FROM {$tableNameSql}{$whereClause}");
+
+    foreach ($bindings as $key => $value) {
+        $stmt->bindValue(":" . $key, $value, PDO::PARAM_STR);
+    }
+
+    $stmt->execute();
+    return (int) $stmt->fetchColumn();
+}
+
+function fetchUserAccessGroups(PDO $pdo, string $tableNameSql, array $filters, int $limit, int $offset): array
+{
+    $bindings = [];
+    $whereClause = buildUserAccessWhereClause($filters, $bindings);
+    $usernameStmt = $pdo->prepare(
+        "SELECT dmis_username
+         FROM {$tableNameSql}{$whereClause}
+         GROUP BY dmis_username
+         ORDER BY dmis_username ASC
+         LIMIT :limit OFFSET :offset"
+    );
+
+    foreach ($bindings as $key => $value) {
+        $usernameStmt->bindValue(":" . $key, $value, PDO::PARAM_STR);
+    }
+
+    $usernameStmt->bindValue(":limit", $limit, PDO::PARAM_INT);
+    $usernameStmt->bindValue(":offset", max(0, $offset), PDO::PARAM_INT);
+    $usernameStmt->execute();
+    $usernames = $usernameStmt->fetchAll(PDO::FETCH_COLUMN);
+
+    if ($usernames === []) {
+        return [];
+    }
+
+    // A search narrows which users are listed, but each card still shows every access the user holds.
+    $placeholders = implode(", ", array_fill(0, count($usernames), "?"));
+    $accessStmt = $pdo->prepare(
+        "SELECT *
+         FROM {$tableNameSql}
+         WHERE dmis_username IN ({$placeholders})
+         ORDER BY dmis_username ASC, module ASC"
+    );
+    $accessStmt->execute(array_values($usernames));
+
+    $groups = [];
+    foreach ($usernames as $username) {
+        $groups[uppercaseText((string) $username)] = [
+            "dmis_username" => (string) $username,
+            "accesses" => [],
+        ];
+    }
+
+    foreach ($accessStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $groupKey = uppercaseText((string) $row["dmis_username"]);
+        if (isset($groups[$groupKey])) {
+            $groups[$groupKey]["accesses"][] = $row;
+        }
+    }
+
+    return array_values($groups);
 }

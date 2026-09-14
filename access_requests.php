@@ -11,18 +11,23 @@ $company = resolveCompanyConfig($_GET["company"] ?? null, $companyConfigs);
 ensureAccessRequestTable($pdo, $company);
 
 $accessRequestTableNameSql = quoteMysqlIdentifier($company["access_request_table_name"]);
+$userAccessTableNameSql = quoteMysqlIdentifier($company["user_access_table_name"]);
+$isAccessView = ($_GET["view"] ?? "") === "accesses";
+$viewParams = $isAccessView ? ["view" => "accesses"] : [];
 $companyDealerOptions = $company["access_request_dealers"] ?? [];
 $filterOptions = [
     "dealer" => $companyDealerOptions,
-    "status" => $accessRequestStatusOptions,
+    "status" => $isAccessView ? [] : $accessRequestStatusOptions,
     "per_page" => $rowsPerPageOptions,
 ];
 
 $filters = buildAccessRequestFilters($_GET, $filterOptions);
-$totalRecords = countAccessRequests($pdo, $accessRequestTableNameSql, $filters);
+$totalRecords = $isAccessView
+    ? countUserAccessUsers($pdo, $userAccessTableNameSql, $filters)
+    : countAccessRequests($pdo, $accessRequestTableNameSql, $filters);
 $pagination = buildPaginationState($filters["page"], $filters["per_page"], $totalRecords);
 $filters["page"] = $pagination["page"];
-$records = fetchAccessRequests(
+$records = $isAccessView ? [] : fetchAccessRequests(
     $pdo,
     $accessRequestTableNameSql,
     $filters,
@@ -30,8 +35,11 @@ $records = fetchAccessRequests(
     $pagination["limit"],
     $pagination["offset"]
 );
+$userAccessGroups = $isAccessView
+    ? fetchUserAccessGroups($pdo, $userAccessTableNameSql, $filters, $pagination["limit"], $pagination["offset"])
+    : [];
 $statusCounts = countAccessRequestsByStatus($pdo, $accessRequestTableNameSql, $accessRequestStatusOptions);
-$accessRequestQueryParams = buildMonitoringListQueryParams($company["key"], $filters);
+$accessRequestQueryParams = buildMonitoringListQueryParams($company["key"], $filters) + $viewParams;
 $mitsubishiUrl = buildUrl("access_requests.php", $accessRequestQueryParams, [
     "company" => "mitsubishi",
     "dealer" => null,
@@ -42,8 +50,10 @@ $hyundaiUrl = buildUrl("access_requests.php", $accessRequestQueryParams, [
     "dealer" => null,
     "page" => 1,
 ]);
-$clearFiltersUrl = buildUrl("access_requests.php", ["company" => $company["key"]]);
+$clearFiltersUrl = buildUrl("access_requests.php", ["company" => $company["key"]] + $viewParams);
 $accessRequestSummaryAnchor = "#access-request-summary";
+$requestsViewUrl = buildUrl("access_requests.php", ["company" => $company["key"]]) . $accessRequestSummaryAnchor;
+$accessesViewUrl = buildUrl("access_requests.php", ["company" => $company["key"], "view" => "accesses"]) . $accessRequestSummaryAnchor;
 $activeFilterBadges = buildAccessRequestFilterBadges($filters);
 $paginationPages = buildPaginationPages($pagination["page"], $pagination["total_pages"]);
 $headerKicker = $company["company_name"];
@@ -68,7 +78,7 @@ $showCompanySwitch = true;
     <section class="card access-request-status-card" aria-label="Access requests by status">
         <div class="access-request-status-grid">
             <?php foreach ($accessRequestStatusOptions as $statusOption): ?>
-            <?php $isActiveStatus = $filters["status"] === $statusOption; ?>
+            <?php $isActiveStatus = !$isAccessView && $filters["status"] === $statusOption; ?>
             <a
                 href="<?= e(buildUrl("access_requests.php", ["company" => $company["key"], "status" => $statusOption]) . $accessRequestSummaryAnchor) ?>"
                 class="summary-card-field access-request-status-count<?= $isActiveStatus ? " active" : "" ?>"
@@ -84,7 +94,7 @@ $showCompanySwitch = true;
     <section class="card" id="access-request-summary">
         <div class="summary-header">
             <div>
-                <h2>DMIS Access Requests</h2>
+                <h2><?= $isAccessView ? "Recorded User Accesses" : "DMIS Access Requests" ?></h2>
             </div>
             <a href="public_access_request.php" class="button-link secondary icon-button" target="_blank" rel="noopener" aria-label="Open public access request form" title="Open public access request form">
                 <?= iconSvg("external-link") ?>
@@ -92,13 +102,27 @@ $showCompanySwitch = true;
             </a>
         </div>
 
+        <nav class="access-request-tabs" aria-label="Access request views">
+            <a href="<?= e($requestsViewUrl) ?>" class="access-request-tab<?= !$isAccessView ? " active" : "" ?>"<?= !$isAccessView ? ' aria-current="page"' : "" ?>>
+                <?= iconSvg("lock") ?>
+                <span>Requests</span>
+            </a>
+            <a href="<?= e($accessesViewUrl) ?>" class="access-request-tab<?= $isAccessView ? " active" : "" ?>"<?= $isAccessView ? ' aria-current="page"' : "" ?>>
+                <?= iconSvg("users") ?>
+                <span>User Accesses</span>
+            </a>
+        </nav>
+
         <form action="access_requests.php#access-request-summary" method="GET" class="summary-filter-form">
             <input type="hidden" name="company" value="<?= e($company["key"]) ?>">
+            <?php if ($isAccessView): ?>
+            <input type="hidden" name="view" value="accesses">
+            <?php endif; ?>
 
             <div class="summary-filter-grid">
                 <div class="field">
-                    <label for="access-request-search">Request search</label>
-                    <input type="search" id="access-request-search" name="q" value="<?= e($filters["search"]) ?>" placeholder="Reference, name, username, module, or department">
+                    <label for="access-request-search"><?= $isAccessView ? "Access search" : "Request search" ?></label>
+                    <input type="search" id="access-request-search" name="q" value="<?= e($filters["search"]) ?>" placeholder="<?= $isAccessView ? "Username, name, module, access, or reference" : "Reference, name, username, module, or department" ?>">
                 </div>
 
                 <div class="field">
@@ -111,6 +135,7 @@ $showCompanySwitch = true;
                     </select>
                 </div>
 
+                <?php if (!$isAccessView): ?>
                 <div class="field">
                     <label for="access-request-status">Status</label>
                     <select id="access-request-status" name="status">
@@ -120,6 +145,7 @@ $showCompanySwitch = true;
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <?php endif; ?>
             </div>
 
             <div class="summary-toolbar">
@@ -135,7 +161,7 @@ $showCompanySwitch = true;
                 </div>
 <br><br><br>
                 <div class="results-meta">
-                    <strong><?= e($pagination["start_item"]) ?>-<?= e($pagination["end_item"]) ?></strong> of <strong><?= e($totalRecords) ?></strong> access requests
+                    <strong><?= e($pagination["start_item"]) ?>-<?= e($pagination["end_item"]) ?></strong> of <strong><?= e($totalRecords) ?></strong> <?= $isAccessView ? "users" : "access requests" ?>
                 </div>
             </div>
         </form>
@@ -148,7 +174,53 @@ $showCompanySwitch = true;
         </div>
         <?php endif; ?>
 
-        <?php if ($records === []): ?>
+        <?php if ($isAccessView): ?>
+            <?php if ($userAccessGroups === []): ?>
+            <div class="summary-card-empty">No recorded user accesses matched the current filters. Accesses are recorded when IT marks an approved request as implemented.</div>
+            <?php else: ?>
+            <div class="summary-card-list">
+                <?php foreach ($userAccessGroups as $group): ?>
+                    <?php
+                    $latestAccess = array_reduce(
+                        $group["accesses"],
+                        static fn(?array $latest, array $access): array => $latest === null || (string) $access["granted_at"] > (string) $latest["granted_at"] ? $access : $latest
+                    );
+                    $metaParts = array_filter([
+                        trim((string) ($latestAccess["dealer"] ?? "")),
+                        trim((string) ($latestAccess["department"] ?? "")),
+                    ]);
+                    $accessCount = count($group["accesses"]);
+                    ?>
+                <article class="summary-card">
+                    <div class="summary-card-header">
+                        <div class="summary-card-main">
+                            <span class="dashboard-activity-id"><?= e($group["dmis_username"]) ?></span>
+                            <div class="dashboard-activity-title"><?= e($latestAccess["requester_name"] ?? "") ?></div>
+                            <?php if ($metaParts !== []): ?>
+                            <div class="dashboard-activity-meta"><?= e(implode(" / ", $metaParts)) ?></div>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="summary-card-action">
+                            <span class="status-pill status-pill-implemented"><?= e($accessCount) ?> <?= $accessCount === 1 ? "module" : "modules" ?></span>
+                        </div>
+                    </div>
+
+                    <div class="summary-card-grid">
+                        <?php foreach ($group["accesses"] as $access): ?>
+                        <?php $accessDetails = mb_strtoupper(trim((string) ($access["access_details"] ?? "")), 'UTF-8'); ?>
+                        <div class="summary-card-field">
+                            <div class="summary-card-label"><?= e($access["module"]) ?></div>
+                            <div class="summary-card-value"><?= e($accessDetails !== "" ? $accessDetails : "Access granted") ?></div>
+                            <a href="<?= e(buildUrl("access_request_view.php", ["company" => $company["key"], "id" => (int) $access["access_request_id"]])) ?>" class="access-list-source" title="Approved by <?= e($access["approved_by"]) ?>, implemented by <?= e($access["implemented_by"]) ?>"><?= e($access["reference_no"]) ?> · <?= e(formatDisplayDate($access["granted_at"])) ?></a>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </article>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+        <?php elseif ($records === []): ?>
         <div class="summary-card-empty">No access requests matched the current filters.</div>
         <?php else: ?>
         <div class="summary-card-list">
@@ -163,13 +235,16 @@ $showCompanySwitch = true;
                 $metaParts = array_filter([
                     trim((string) ($row["dealer"] ?? "")),
                     trim((string) ($row["department"] ?? "")),
-                    trim((string) ($row["module"] ?? "")),
                 ]);
                 $cardFields = [
                     "DMIS username" => $row["dmis_username"] ?? "",
+                    "Modules requested" => $row["module"] ?? "",
+                    "Requested by" => $row["requested_by"] ?? "",
                     "Submitted" => formatDisplayTimestamp($row["created_at"] ?? null),
-                    "Reviewed by" => $row["reviewed_by"] ?? "",
-                    "Reviewed at" => formatDisplayTimestamp($row["reviewed_at"] ?? null),
+                    "IT review by" => $row["it_reviewed_by"] ?? "",
+                    "Final decision" => $row["final_decision"] ?? "",
+                    "Final reviewed by" => $row["final_reviewed_by"] ?? "",
+                    "Implemented by" => $row["implemented_by"] ?? "",
                 ];
                 ?>
             <article class="summary-card">
@@ -209,7 +284,7 @@ $showCompanySwitch = true;
         <?php endif; ?>
 
         <?php if ($pagination["total_pages"] > 1): ?>
-        <nav class="pagination" aria-label="Access request pages">
+        <nav class="pagination" aria-label="<?= $isAccessView ? "User access pages" : "Access request pages" ?>">
             <?php if ($pagination["has_previous"]): ?>
             <a href="<?= e(buildUrl("access_requests.php", $accessRequestQueryParams, ["page" => $pagination["page"] - 1]) . $accessRequestSummaryAnchor) ?>" class="button-link secondary icon-button" aria-label="Previous page" title="Previous page">
                 <?= iconSvg("arrow-left") ?>

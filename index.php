@@ -5,6 +5,7 @@ require "config.php";
 require __DIR__ . "/includes/monitoring_options.php";
 require __DIR__ . "/includes/monitoring_helpers.php";
 require __DIR__ . "/includes/monitoring_repository.php";
+require __DIR__ . "/includes/access_request_repository.php";
 
 $today = (new DateTimeImmutable("now", new DateTimeZone("Asia/Manila")))->format("Y-m-d");
 $company = resolveCompanyConfig($_GET["company"] ?? null, $companyConfigs);
@@ -14,6 +15,12 @@ ensureMonitoringTable($pdo, $company);
 if (companySupportsTicketMonitoring($company)) {
     ensureTicketMonitoringTable($pdo, $company);
 }
+ensureAccessRequestTable($pdo, $company);
+$accessRequestNotifications = fetchAccessRequestNotifications(
+    $pdo,
+    quoteMysqlIdentifier($company["access_request_table_name"]),
+    ["Pending", "For Approval", "Approved"]
+);
 $nextMonitoringIdentificationNumber = getNextMonitoringIdentificationNumber($pdo, $company);
 
 $filterOptions = [

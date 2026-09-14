@@ -7,8 +7,8 @@ $defaultHeaderDescriptions = [
     "ticket_monitoring.php" => "Create, review, and follow support tickets from submission to resolution.",
     "monitoring_record.php" => "Review the complete activity, supporting details, and actions for a monitoring record.",
     "promote_to_live.php" => "Review test changes before promoting them to the live monitoring system.",
-    "access_requests.php" => "Review public DMIS access requests and record each decision.",
-    "access_request_view.php" => "Review the request details and record an access decision.",
+    "access_requests.php" => "Review public DMIS access requests through IT review, approval, and implementation, and see each user's recorded accesses.",
+    "access_request_view.php" => "Request the access to grant, decide on it in the final review, then mark it implemented.",
 ];
 $headerDescription = $headerDescription ?? ($defaultHeaderDescriptions[$currentScript] ?? "");
 $showCompanySwitch = $showCompanySwitch ?? true;

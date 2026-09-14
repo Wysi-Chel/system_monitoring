@@ -36,6 +36,7 @@ function iconSvg(string $name): string
         "ticket" => '<path d="M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4Z"></path><path d="M13 6v2"></path><path d="M13 11v2"></path><path d="M13 16v2"></path>',
         "trash" => '<path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="m19 6-1 15H6L5 6"></path>',
         "upload" => '<path d="M12 21V9"></path><path d="m7 14 5-5 5 5"></path><path d="M5 3h14"></path>',
+        "users" => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>',
         "x" => '<path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>',
     ];
 

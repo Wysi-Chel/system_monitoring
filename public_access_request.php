@@ -16,8 +16,9 @@ $formValues = [
     "dealer" => "",
     "department" => "",
     "dmis_username" => "",
-    "module" => "",
+    "modules" => [],
     "description" => "",
+    "requested_by" => "",
     "privacy_consent" => false,
 ];
 $formErrors = [];
@@ -34,8 +35,9 @@ if (($_SERVER["REQUEST_METHOD"] ?? "GET") === "POST") {
         "dealer" => normalizeAllowedFilter($_POST["dealer"] ?? "", $accessRequestDealerOptions),
         "department" => normalizeAllowedFilter($_POST["department"] ?? "", $departmentOptions),
         "dmis_username" => normalizeSearchFilter($_POST["dmis_username"] ?? ""),
-        "module" => normalizeAllowedFilter($_POST["module"] ?? "", $moduleOptions),
+        "modules" => normalizeAccessRequestModules($_POST["modules"] ?? [], $moduleOptions),
         "description" => trim((string) ($_POST["description"] ?? "")),
+        "requested_by" => uppercaseText(normalizeSearchFilter($_POST["requested_by"] ?? "")),
         "privacy_consent" => !empty($_POST["privacy_consent"]),
     ];
 
@@ -48,17 +50,22 @@ if (($_SERVER["REQUEST_METHOD"] ?? "GET") === "POST") {
         || $formValues["dealer"] === ""
         || $formValues["department"] === ""
         || $formValues["dmis_username"] === ""
-        || $formValues["module"] === ""
         || $formValues["description"] === ""
+        || $formValues["requested_by"] === ""
     ) {
         $formErrors[] = "Complete all required fields.";
     }
 
+    if ($formValues["modules"] === []) {
+        $formErrors[] = "Select at least one module.";
+    }
+
     if (
         getAccessRequestTextLength($formValues["requester_name"]) > ACCESS_REQUEST_NAME_MAX_LENGTH
+        || getAccessRequestTextLength($formValues["requested_by"]) > ACCESS_REQUEST_NAME_MAX_LENGTH
         || getAccessRequestTextLength($formValues["dmis_username"]) > ACCESS_REQUEST_USERNAME_MAX_LENGTH
     ) {
-        $formErrors[] = "The name or DMIS username is too long.";
+        $formErrors[] = "A name or the DMIS username is too long.";
     }
 
     if (getAccessRequestTextLength($formValues["description"]) > ACCESS_REQUEST_DESCRIPTION_MAX_LENGTH) {
@@ -85,8 +92,9 @@ if (($_SERVER["REQUEST_METHOD"] ?? "GET") === "POST") {
                 "dealer" => $formValues["dealer"],
                 "department" => $formValues["department"],
                 "dmis_username" => $formValues["dmis_username"],
-                "module" => $formValues["module"],
+                "module" => implode(", ", $formValues["modules"]),
                 "description" => $formValues["description"],
+                "requested_by" => $formValues["requested_by"],
                 "status" => $accessRequestStatusOptions[0],
                 "submitted_ip" => getAccessRequestClientIp(),
             ]);
@@ -117,6 +125,15 @@ $csrfToken = getAccessRequestCsrfToken();
     <script src="<?= e($portalBase) ?>/assets/js/theme-init.js"></script>
     <link rel="stylesheet" href="<?= e($portalBase) ?>/assets/css/app.css">
     <link rel="stylesheet" href="<?= e($portalBase) ?>/assets/css/public-requests.css">
+    <style>
+        .access-module-hint { margin-left: 4px; color: var(--muted); font-size: .7rem; font-weight: 500; }
+        .access-module-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+        .access-module-option { align-items: center; padding: 11px 13px; color: inherit; border: 1px solid #d7dce2; border-radius: 12px; background: #fff; font-size: .8rem; font-weight: 650; }
+        .access-module-option input { margin: 0; }
+        .access-module-option:has(input:checked) { border-color: var(--red); background: #fff6f7; }
+        html[data-theme="dark"] .access-module-option { border-color: #39414b; background: rgba(34,40,47,.94); }
+        html[data-theme="dark"] .access-module-option:has(input:checked) { border-color: #75404a; background: #352329; }
+    </style>
     <script src="<?= e($portalBase) ?>/assets/js/theme.js" defer></script>
 </head>
 <body class="public-request-body">
@@ -138,7 +155,6 @@ $csrfToken = getAccessRequestCsrfToken();
             <span class="success-check">✓</span>
             <span class="public-kicker">Request received</span>
             <h1>Your DMIS access request is now pending review.</h1>
-            <p>Save this tracking reference. The IT Department may contact you through your department if clarification is needed.</p>
             <strong class="tracking-reference"><?= e($submittedReference) ?></strong>
             <div class="public-success-actions"><a class="btn btn-primary" href="<?= e($publicPortalUrl) ?>">Return to request portal</a><a class="btn btn-secondary" href="public_access_request.php">Submit another request</a></div>
         </section>
@@ -188,35 +204,32 @@ $csrfToken = getAccessRequestCsrfToken();
             <section class="card public-section">
                 <div class="card-header"><div><span class="public-step">Step 2</span><h2>Access being requested</h2></div></div>
                 <div class="card-body form-grid">
-                    <div class="form-group full">
-                        <label for="access-module">Module <span class="required">*</span></label>
-                        <select id="access-module" name="module" required>
-                            <option value="">Select module</option>
-                            <?php foreach ($moduleOptions as $option): ?>
-                            <option value="<?= e($option) ?>"<?= $formValues["module"] === $option ? " selected" : "" ?>><?= e($option) ?></option>
+                    <div class="form-group full" role="group" aria-labelledby="access-module-label">
+                        <label id="access-module-label">Modules <span class="required">*</span><small class="access-module-hint">Select one or more</small></label>
+                        <div class="access-module-options">
+                            <?php foreach ($moduleOptions as $optionIndex => $option): ?>
+                            <label class="public-consent access-module-option" for="access-module-<?= e($optionIndex) ?>"><input type="checkbox" id="access-module-<?= e($optionIndex) ?>" name="modules[]" value="<?= e($option) ?>"<?= in_array($option, $formValues["modules"], true) ? " checked" : "" ?>><span><?= e($option) ?></span></label>
                             <?php endforeach; ?>
-                        </select>
+                        </div>
                     </div>
                     <div class="form-group full">
                         <label for="access-description">Description <span class="required">*</span></label>
                         <textarea id="access-description" name="description" rows="5" maxlength="<?= e(ACCESS_REQUEST_DESCRIPTION_MAX_LENGTH) ?>" placeholder="Describe the specific access needed and the reason for the request" required><?= e($formValues["description"]) ?></textarea>
                     </div>
-                    <label class="public-consent full"><input type="checkbox" name="privacy_consent" value="1" required<?= $formValues["privacy_consent"] ? " checked" : "" ?>><span>I confirm that the information above is accurate and that I am authorized to request this system access.</span></label>
                 </div>
             </section>
+
             <section class="card public-section">
                 <div class="card-header"><div><span class="public-step">Step 3</span><h2>Requested By</h2></div></div>
                 <div class="card-body form-grid">
                     <div class="form-group full">
-                        <label for="access-manager-name">Name <span class="required">*</span></label>
-                        <input id="access-manager-name" name="manager-name" type="text" placeholder="Manager Name" required><?= e($formValues["description"]) ?></textarea>
-                    
+                        <label for="access-requested-by">Name <span class="required">*</span></label>
+                        <input type="text" id="access-requested-by" name="requested_by" maxlength="<?= e(ACCESS_REQUEST_NAME_MAX_LENGTH) ?>" value="<?= e($formValues["requested_by"]) ?>" placeholder="Manager name" autocomplete="off" required>
                     </div>
-                    <div class="form-group full">
-                        </div>
                     <label class="public-consent full"><input type="checkbox" name="privacy_consent" value="1" required<?= $formValues["privacy_consent"] ? " checked" : "" ?>><span>I confirm that the information above is accurate and that I am authorized to request this system access.</span></label>
                 </div>
             </section>
+
             <div class="public-submit-bar"><span>Submission status will start as <strong>Pending</strong>.</span><button class="btn btn-primary" type="submit">Submit access request</button></div>
         </form>
     <?php endif; ?>

@@ -57,6 +57,70 @@ $renderDashboardBreakdown = static function (array $items, string $emptyMessage)
         <?php endif; ?>
     </div>
 
+    <?php
+    $accessRequestNotificationQueues = [
+        "Pending" => [
+            "title" => "New Access Requests",
+            "note" => "Waiting for IT review",
+            "time_label" => "Submitted",
+            "time_key" => "created_at",
+        ],
+        "For Approval" => [
+            "title" => "Access For Approval",
+            "note" => "Requested by IT, waiting for final review",
+            "time_label" => "Sent",
+            "time_key" => "it_reviewed_at",
+        ],
+        "Approved" => [
+            "title" => "Approved Access",
+            "note" => "Waiting for IT to implement",
+            "time_label" => "Approved",
+            "time_key" => "final_reviewed_at",
+        ],
+    ];
+    ?>
+    <div class="dashboard-notification-grid" aria-label="Access request notifications">
+        <?php foreach ($accessRequestNotificationQueues as $queueStatus => $queue): ?>
+            <?php
+            $queueCount = (int) ($accessRequestNotifications[$queueStatus]["count"] ?? 0);
+            $queueRecords = $accessRequestNotifications[$queueStatus]["records"] ?? [];
+            $queueUrl = buildUrl("access_requests.php", [
+                "company" => $company["key"],
+                "status" => $queueStatus,
+            ]) . "#access-request-summary";
+            ?>
+        <article class="dashboard-panel dashboard-notification<?= $queueCount > 0 ? " has-items" : "" ?>">
+            <div class="dashboard-panel-header">
+                <div>
+                    <h3><?= e($queue["title"]) ?></h3>
+                    <p><?= e($queue["note"]) ?></p>
+                </div>
+                <a href="<?= e($queueUrl) ?>" class="dashboard-notification-count" aria-label="<?= e(number_format($queueCount) . " " . strtolower($queue["title"])) ?>" title="Open <?= e(strtolower($queue["title"])) ?>"><?= e(number_format($queueCount)) ?></a>
+            </div>
+
+            <?php if ($queueRecords === []): ?>
+            <p class="dashboard-empty-state">Nothing waiting right now.</p>
+            <?php else: ?>
+            <div class="dashboard-activity-list">
+                <?php foreach ($queueRecords as $queueRecord): ?>
+                <a href="<?= e(buildUrl("access_request_view.php", ["company" => $company["key"], "id" => (int) $queueRecord["id"]])) ?>" class="dashboard-activity-item dashboard-notification-item">
+                    <div class="dashboard-activity-main">
+                        <div class="dashboard-activity-id"><?= e($queueRecord["reference_no"]) ?></div>
+                        <div class="dashboard-activity-title"><?= e($queueRecord["requester_name"]) ?></div>
+                        <div class="dashboard-activity-meta"><?= e(implode(" / ", array_filter([trim((string) $queueRecord["dealer"]), trim((string) $queueRecord["module"])]))) ?></div>
+                    </div>
+                    <div class="dashboard-activity-meta dashboard-notification-time"><?= e($queue["time_label"]) ?> <?= e(formatDisplayTimestamp($queueRecord[$queue["time_key"]] ?? null)) ?></div>
+                </a>
+                <?php endforeach; ?>
+            </div>
+            <?php if ($queueCount > count($queueRecords)): ?>
+            <a href="<?= e($queueUrl) ?>" class="dashboard-panel-note dashboard-notification-more">View all <?= e(number_format($queueCount)) ?> requests</a>
+            <?php endif; ?>
+            <?php endif; ?>
+        </article>
+        <?php endforeach; ?>
+    </div>
+
     <div class="dashboard-metrics-grid">
         <article class="dashboard-metric-card dashboard-metric-total">
             <span class="dashboard-metric-icon"><?= iconSvg("file-text") ?></span>

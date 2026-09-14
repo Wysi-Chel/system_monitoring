@@ -13,7 +13,8 @@ $processedTypeOptions = ["Cancellation", "Unposting", "Void", "Data Correction",
 $statusOptions = ["Pending", "Cancelled", "Unposted", "Voided"];
 $summaryStatusOptions = [...$statusOptions, "Done"];
 $ticketStatusOptions = ["Open", "In Progress", "On Hold", "Resolved"];
-$accessRequestStatusOptions = ["Pending", "Under Review", "Approved", "Declined", "Cancelled"];
+$accessRequestStatusOptions = ["Pending", "For Approval", "Approved", "Implemented", "Declined"];
+$accessRequestFinalDecisionOptions = ["Approved", "Declined"];
 $monitoringSummaryRowsPerPageOptions = [10];
 $rowsPerPageOptions = [25, 50, 100];
 

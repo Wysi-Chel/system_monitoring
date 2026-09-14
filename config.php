@@ -96,6 +96,7 @@ $companyConfigs = [
         "memo_template" => "MGSC_VerbalWarningMemo.docx",
         "export_slug" => "micei",
         "access_request_table_name" => "micei_access_requests",
+        "user_access_table_name" => "micei_user_accesses",
         "access_request_dealers" => ["MGSC", "MKC", "All Dealers"],
     ],
     "hyundai" => [
@@ -114,6 +115,7 @@ $companyConfigs = [
         "memo_template" => "NGSC_VerbalWarningMemo.docx",
         "export_slug" => "ntr",
         "access_request_table_name" => "ntr_access_requests",
+        "user_access_table_name" => "ntr_user_accesses",
         "access_request_dealers" => ["NGSC"],
     ],
 ];
@@ -546,7 +548,20 @@ function ensureAccessRequestTable(PDO $pdo, array $company): void
             dmis_username VARCHAR(100) NOT NULL,
             module VARCHAR(100) NOT NULL,
             description TEXT NOT NULL,
+            requested_by VARCHAR(150) NULL,
             status VARCHAR(40) NOT NULL DEFAULT 'Pending',
+            it_status VARCHAR(40) NOT NULL DEFAULT 'Pending',
+            grant_access TEXT NULL,
+            it_notes TEXT NULL,
+            it_reviewed_by VARCHAR(150) NULL,
+            it_reviewed_at DATETIME NULL,
+            final_decision VARCHAR(40) NULL,
+            final_notes TEXT NULL,
+            final_reviewed_by VARCHAR(150) NULL,
+            final_reviewed_at DATETIME NULL,
+            implementation_notes TEXT NULL,
+            implemented_by VARCHAR(150) NULL,
+            implemented_at DATETIME NULL,
             review_notes TEXT NULL,
             reviewed_by VARCHAR(150) NULL,
             reviewed_at DATETIME NULL,
@@ -557,6 +572,89 @@ function ensureAccessRequestTable(PDO $pdo, array $company): void
             INDEX idx_access_request_status (status),
             INDEX idx_access_request_username (dmis_username),
             INDEX idx_access_request_created (created_at)
+        )"
+    );
+    ensureMysqlTableColumn($pdo, $tableNameSql, "requested_by", "requested_by VARCHAR(150) NULL AFTER description");
+    ensureMysqlTableColumn($pdo, $tableNameSql, "it_status", "it_status VARCHAR(40) NOT NULL DEFAULT 'Pending' AFTER status");
+    renameMysqlTableColumnIfNeeded($pdo, $tableNameSql, "implemented_access", "grant_access", "grant_access TEXT NULL");
+    ensureMysqlTableColumn($pdo, $tableNameSql, "grant_access", "grant_access TEXT NULL AFTER it_status");
+    ensureMysqlTableColumn($pdo, $tableNameSql, "it_notes", "it_notes TEXT NULL AFTER grant_access");
+    ensureMysqlTableColumn($pdo, $tableNameSql, "it_reviewed_by", "it_reviewed_by VARCHAR(150) NULL AFTER it_notes");
+    ensureMysqlTableColumn($pdo, $tableNameSql, "it_reviewed_at", "it_reviewed_at DATETIME NULL AFTER it_reviewed_by");
+    ensureMysqlTableColumn($pdo, $tableNameSql, "final_decision", "final_decision VARCHAR(40) NULL AFTER it_reviewed_at");
+    ensureMysqlTableColumn($pdo, $tableNameSql, "final_notes", "final_notes TEXT NULL AFTER final_decision");
+    ensureMysqlTableColumn($pdo, $tableNameSql, "final_reviewed_by", "final_reviewed_by VARCHAR(150) NULL AFTER final_notes");
+    ensureMysqlTableColumn($pdo, $tableNameSql, "final_reviewed_at", "final_reviewed_at DATETIME NULL AFTER final_reviewed_by");
+    ensureMysqlTableColumn($pdo, $tableNameSql, "implementation_notes", "implementation_notes TEXT NULL AFTER final_reviewed_at");
+    ensureMysqlTableColumn($pdo, $tableNameSql, "implemented_by", "implemented_by VARCHAR(150) NULL AFTER implementation_notes");
+    ensureMysqlTableColumn($pdo, $tableNameSql, "implemented_at", "implemented_at DATETIME NULL AFTER implemented_by");
+    backfillAccessRequestWorkflowStatuses($pdo, $tableNameSql);
+    ensureUserAccessTable($pdo, $company);
+}
+
+function renameMysqlTableColumnIfNeeded(PDO $pdo, string $tableNameSql, string $oldColumnName, string $newColumnName, string $definitionSql): void
+{
+    $hasOldColumn = (bool) $pdo->query("SHOW COLUMNS FROM {$tableNameSql} LIKE " . $pdo->quote($oldColumnName))->fetch(PDO::FETCH_ASSOC);
+    $hasNewColumn = (bool) $pdo->query("SHOW COLUMNS FROM {$tableNameSql} LIKE " . $pdo->quote($newColumnName))->fetch(PDO::FETCH_ASSOC);
+
+    if ($hasOldColumn && !$hasNewColumn) {
+        $pdo->exec("ALTER TABLE {$tableNameSql} CHANGE COLUMN " . quoteMysqlIdentifier($oldColumnName) . " {$definitionSql}");
+    }
+}
+
+function backfillAccessRequestWorkflowStatuses(PDO $pdo, string $tableNameSql): void
+{
+    // Requests decided under the earlier single-step review keep that decision as their final review;
+    // approved ones still wait for IT to mark them implemented.
+    $pdo->exec(
+        "UPDATE {$tableNameSql}
+         SET final_decision = IF(status = 'Approved', 'Approved', 'Declined'),
+             final_notes = review_notes,
+             final_reviewed_by = reviewed_by,
+             final_reviewed_at = reviewed_at,
+             status = IF(status = 'Approved', 'Approved', 'Declined')
+         WHERE final_decision IS NULL
+           AND status IN ('Approved', 'Declined', 'Cancelled')"
+    );
+    $pdo->exec(
+        "UPDATE {$tableNameSql}
+         SET status = 'Pending'
+         WHERE status NOT IN ('Pending', 'For Approval', 'Approved', 'Implemented', 'Declined')"
+    );
+    // it_status now tracks implementation, which only happens after approval.
+    $pdo->exec(
+        "UPDATE {$tableNameSql}
+         SET it_status = 'Pending'
+         WHERE implemented_at IS NULL
+           AND it_status <> 'Pending'"
+    );
+}
+
+function ensureUserAccessTable(PDO $pdo, array $company): void
+{
+    if (!isset($company["user_access_table_name"]) || !is_string($company["user_access_table_name"]) || trim($company["user_access_table_name"]) === "") {
+        throw new RuntimeException("User access table is not configured for this company.");
+    }
+
+    $tableNameSql = quoteMysqlIdentifier($company["user_access_table_name"]);
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS {$tableNameSql} (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            dmis_username VARCHAR(100) NOT NULL,
+            requester_name VARCHAR(150) NOT NULL,
+            dealer VARCHAR(100) NOT NULL,
+            department VARCHAR(100) NOT NULL,
+            module VARCHAR(100) NOT NULL,
+            access_details VARCHAR(255) NULL,
+            access_request_id INT NOT NULL,
+            reference_no VARCHAR(40) NOT NULL,
+            implemented_by VARCHAR(150) NULL,
+            approved_by VARCHAR(150) NULL,
+            granted_at DATETIME NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY uniq_user_access_module (dmis_username, module),
+            INDEX idx_user_access_request (access_request_id)
         )"
     );
 }

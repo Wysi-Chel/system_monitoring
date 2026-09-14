@@ -25,32 +25,86 @@ if ($record === null) {
     exit;
 }
 
+$reviewType = in_array($_POST["review_type"] ?? "", ["it", "final", "implementation"], true) ? $_POST["review_type"] : "it";
 $redirectParams = [
     "company" => $company["key"],
     "id" => $requestId,
 ];
+$errorCode = "";
 
 if (!isValidAccessRequestCsrfToken($_POST["csrf_token"] ?? null)) {
-    $redirectParams["error"] = "session_expired";
-} else {
-    $status = normalizeAllowedFilter($_POST["status"] ?? "", $accessRequestStatusOptions);
-    $reviewNotes = trim((string) ($_POST["review_notes"] ?? ""));
+    $errorCode = "session_expired";
+} elseif ($reviewType === "it") {
+    $grantAccess = buildAccessRequestGrantAccess($_POST, $moduleOptions);
+    $itNotes = trim((string) ($_POST["it_notes"] ?? ""));
+    $hasLongAccessDetails = array_filter(
+        $grantAccess,
+        static fn(string $details): bool => getAccessRequestTextLength($details) > ACCESS_REQUEST_ACCESS_DETAILS_MAX_LENGTH
+    ) !== [];
 
-    if ($status === "") {
-        $redirectParams["error"] = "invalid_status";
+    if (!canSubmitAccessRequestItReview($record)) {
+        $errorCode = "it_locked";
+    } elseif ($grantAccess === []) {
+        $errorCode = "grant_access_required";
+    } elseif ($hasLongAccessDetails || getAccessRequestTextLength($itNotes) > ACCESS_REQUEST_REVIEW_NOTES_MAX_LENGTH) {
+        $errorCode = "review_too_long";
     } else {
-        updateAccessRequestReview(
+        submitAccessRequestItReview(
             $pdo,
             $accessRequestTableNameSql,
             $requestId,
-            $status,
-            $reviewNotes !== "" ? $reviewNotes : null,
+            $grantAccess,
+            $itNotes !== "" ? $itNotes : null,
             getAccessRequestPortalUserName()
         );
-        $redirectParams["saved"] = 1;
+    }
+} elseif ($reviewType === "final") {
+    $finalDecision = normalizeAllowedFilter($_POST["final_decision"] ?? "", $accessRequestFinalDecisionOptions);
+    $finalNotes = trim((string) ($_POST["final_notes"] ?? ""));
+
+    if (!canSaveAccessRequestFinalReview($record)) {
+        $errorCode = "final_unavailable";
+    } elseif ($finalDecision === "") {
+        $errorCode = "invalid_final_decision";
+    } elseif ($finalDecision === "Declined" && $finalNotes === "") {
+        $errorCode = "decline_notes_required";
+    } elseif (getAccessRequestTextLength($finalNotes) > ACCESS_REQUEST_REVIEW_NOTES_MAX_LENGTH) {
+        $errorCode = "review_too_long";
+    } elseif (!saveAccessRequestFinalReview(
+        $pdo,
+        $accessRequestTableNameSql,
+        $requestId,
+        $finalDecision,
+        $finalNotes !== "" ? $finalNotes : null,
+        getAccessRequestPortalUserName(),
+        trim((string) ($_POST["it_reviewed_at"] ?? ""))
+    )) {
+        $errorCode = "review_changed";
+    }
+} else {
+    $implementationNotes = trim((string) ($_POST["implementation_notes"] ?? ""));
+
+    if (!canMarkAccessRequestImplemented($record)) {
+        $errorCode = "implementation_unavailable";
+    } elseif (getAccessRequestTextLength($implementationNotes) > ACCESS_REQUEST_REVIEW_NOTES_MAX_LENGTH) {
+        $errorCode = "review_too_long";
+    } elseif (!markAccessRequestImplemented(
+        $pdo,
+        $company,
+        $requestId,
+        $implementationNotes !== "" ? $implementationNotes : null,
+        getAccessRequestPortalUserName()
+    )) {
+        $errorCode = "implementation_unavailable";
     }
 }
 
-header("Location: access_request_view.php?" . http_build_query($redirectParams));
+if ($errorCode !== "") {
+    $redirectParams["error"] = $errorCode;
+    $redirectParams["review"] = $reviewType;
+} else {
+    $redirectParams["saved"] = $reviewType;
+}
+
+header("Location: access_request_view.php?" . http_build_query($redirectParams) . "#access-request-" . $reviewType . "-review");
 exit;
-?>

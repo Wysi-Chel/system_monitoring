@@ -146,15 +146,34 @@ Moved here from the MICEI MIS portal (micei_mis).
   Linked from the MICEI public request portal (micei_mis/public_requests.php).
 
 - Staff review, under Access Requests in the sidebar:
-  access_requests.php               - list, search, and status filter per company workspace
-  access_request_view.php           - request details and review decision
-  update_access_request_status.php  - saves the review and records the signed-in reviewer
+  access_requests.php               - Requests tab: list, search, and status filter per company workspace
+                                      User Accesses tab: accesses recorded per DMIS username
+  access_request_view.php           - request details, IT review, final review, implementation,
+                                      and the user's current accesses
+  update_access_request_status.php  - saves each step and records the signed-in user
+
+- Workflow:
+  1. The requester ticks one or more modules and names the manager requesting the access.
+     Status: Pending.
+  2. IT review: IT ticks the modules to grant this user, describes the access for each, and
+     sends it for final review. Status: For Approval.
+  3. Final review: approve or decline the access IT requested, including any changes from what
+     the user asked for, with notes. Notes are required when declining.
+     Declined: IT can revise the access and send it again. Approved: status Approved.
+  4. Implementation: IT sets up the approved access and marks it implemented. Status: Implemented.
+     Each granted module is then recorded under the user's DMIS username. A later implemented
+     request for the same module replaces that module's recorded access.
+
+- The dashboard shows notifications for new requests (Pending), requests waiting for final
+  approval (For Approval), and approved requests waiting for IT to implement (Approved).
 
 - Requests are routed by dealer:
-  MGSC, MKC, and All Dealers -> micei_access_requests  (Mitsubishi workspace)
-  NGSC                       -> ntr_access_requests    (Hyundai workspace)
+  MGSC, MKC, and All Dealers -> micei_access_requests, micei_user_accesses  (Mitsubishi workspace)
+  NGSC                       -> ntr_access_requests, ntr_user_accesses      (Hyundai workspace)
 
 - Reference numbers follow DAR-MICEI-YYYY-NNNN and DAR-NTR-YYYY-NNNN.
 
-- Both tables are created automatically on first use and by:
+- The tables are created and upgraded automatically on first use and by:
   php scripts\sync_environment_schema.php
+  Requests saved before the two-step review are converted: Under Review becomes Pending,
+  Approved and Declined keep their decision as the final review, and Cancelled becomes Declined.
