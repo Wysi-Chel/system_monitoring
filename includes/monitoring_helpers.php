@@ -283,7 +283,20 @@ function resolveMonitoringValidationErrorMessage(?string $errorCode): ?string
     };
 }
 
-function renderOptionButtons(string $name, array $options, bool $allowMultiple = false, $selectedValues = []): void
+function getMonitoringPortalUserProcessedBy(array $processedByOptions): string
+{
+    $usernameKey = uppercaseText(getMonitoringPortalUsername());
+
+    foreach ($processedByOptions as $option) {
+        if ($usernameKey !== "" && uppercaseText((string) $option) === $usernameKey) {
+            return (string) $option;
+        }
+    }
+
+    return "";
+}
+
+function renderOptionButtons(string $name, array $options, bool $allowMultiple = false, $selectedValues = [], bool $lockToSelected = false): void
 {
     $groupRole = $allowMultiple ? "group" : "radiogroup";
     $inputType = $allowMultiple ? "checkbox" : "radio";
@@ -303,9 +316,10 @@ function renderOptionButtons(string $name, array $options, bool $allowMultiple =
         $safeOption = e($option);
         $displayOption = e(uppercaseText((string) $option));
         $isChecked = in_array(uppercaseText(trim((string) $option)), $selectedKeys, true);
+        $isDisabled = $lockToSelected && !$isChecked;
 
         echo '<label class="option-button" for="' . $safeId . '">';
-        echo '<input type="' . $inputType . '" id="' . $safeId . '" name="' . $safeName . '" value="' . $safeOption . '"' . ($isChecked ? ' checked' : '') . '>';
+        echo '<input type="' . $inputType . '" id="' . $safeId . '" name="' . $safeName . '" value="' . $safeOption . '"' . ($isChecked ? ' checked' : '') . ($isDisabled ? ' disabled' : '') . '>';
         echo '<span>' . $displayOption . '</span>';
         echo '</label>';
     }

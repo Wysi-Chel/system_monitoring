@@ -178,7 +178,8 @@ $userNameSuggestions = isset($userNameSuggestions) && is_array($userNameSuggesti
 
                 <div class="field">
                     <label>Processed by</label>
-                    <?php renderOptionButtons("processed_by", $processedByOptions, false, $recordFormValue("processed_by")); ?>
+                    <?php // Locked: new records take the signed-in account, edits keep the original processor (save.php enforces this). ?>
+                    <?php renderOptionButtons("processed_by", $processedByOptions, false, $recordFormValue("processed_by") ?: getMonitoringPortalUserProcessedBy($processedByOptions), true); ?>
                 </div>
 
                 <div class="field field-span-2">

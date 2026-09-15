@@ -25,6 +25,11 @@ function getMonitoringPortalUser(): array
     return is_array($portalUser) ? $portalUser : [];
 }
 
+function getMonitoringPortalUsername(): string
+{
+    return trim((string) (getMonitoringPortalUser()["username"] ?? ""));
+}
+
 function isMonitoringAuthenticated(): bool
 {
     return !empty(getMonitoringPortalUser()["id"]);

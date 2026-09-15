@@ -271,7 +271,6 @@ $uppercaseFields = [
     "client_name",
     "reason",
     "approved_by",
-    "processed_by",
     "remarks",
     "system_admin",
     "ticket",
@@ -320,6 +319,12 @@ if ($isEditingRecord) {
         (string) ($existingRecord["identification_number"] ?? $prefilledIdentificationNumber)
     );
 }
+
+// Processed by is never taken from the form: new records get the signed-in account, edits keep the original processor.
+$existingProcessedBy = trim((string) ($existingRecord["processed_by"] ?? ""));
+$normalizedText["processed_by"] = $existingProcessedBy !== ""
+    ? $existingProcessedBy
+    : getMonitoringPortalUserProcessedBy($processedByOptions);
 
 $identificationNumber = $prefilledIdentificationNumber !== ""
     ? $prefilledIdentificationNumber

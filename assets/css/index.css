@@ -741,6 +741,14 @@ body.page-ticket-monitoring .ticket-form-actions {
     font-size: 12px;
 }
 
+.option-button:has(input:disabled) {
+    cursor: not-allowed;
+}
+
+.option-button input:disabled + span {
+    opacity: 0.45;
+}
+
 textarea {
     min-height: 38px;
     resize: vertical;
