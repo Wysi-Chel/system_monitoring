@@ -42,7 +42,9 @@ if (!isValidAccessRequestCsrfToken($_POST["csrf_token"] ?? null)) {
         static fn(string $details): bool => getAccessRequestTextLength($details) > ACCESS_REQUEST_ACCESS_DETAILS_MAX_LENGTH
     ) !== [];
 
-    if (!canSubmitAccessRequestItReview($record)) {
+    if (!isAccessRequestItReviewer()) {
+        $errorCode = "not_permitted";
+    } elseif (!canSubmitAccessRequestItReview($record)) {
         $errorCode = "it_locked";
     } elseif ($grantAccess === []) {
         $errorCode = "grant_access_required";
@@ -59,22 +61,23 @@ if (!isValidAccessRequestCsrfToken($_POST["csrf_token"] ?? null)) {
         );
     }
 } elseif ($reviewType === "final") {
-    $finalDecision = normalizeAllowedFilter($_POST["final_decision"] ?? "", $accessRequestFinalDecisionOptions);
+    $grantAccess = decodeAccessRequestGrantAccess($record["grant_access"] ?? null);
+    $approvedAccess = buildAccessRequestApprovedAccess($_POST, $grantAccess);
     $finalNotes = trim((string) ($_POST["final_notes"] ?? ""));
 
-    if (!canSaveAccessRequestFinalReview($record)) {
+    if (!isAccessRequestFinalReviewer()) {
+        $errorCode = "not_permitted";
+    } elseif (!canSaveAccessRequestFinalReview($record)) {
         $errorCode = "final_unavailable";
-    } elseif ($finalDecision === "") {
-        $errorCode = "invalid_final_decision";
-    } elseif ($finalDecision === "Declined" && $finalNotes === "") {
-        $errorCode = "decline_notes_required";
+    } elseif (count($approvedAccess) < count($grantAccess) && $finalNotes === "") {
+        $errorCode = "final_notes_required";
     } elseif (getAccessRequestTextLength($finalNotes) > ACCESS_REQUEST_REVIEW_NOTES_MAX_LENGTH) {
         $errorCode = "review_too_long";
     } elseif (!saveAccessRequestFinalReview(
         $pdo,
         $accessRequestTableNameSql,
         $requestId,
-        $finalDecision,
+        $approvedAccess,
         $finalNotes !== "" ? $finalNotes : null,
         getAccessRequestPortalUserName(),
         trim((string) ($_POST["it_reviewed_at"] ?? ""))
@@ -82,9 +85,11 @@ if (!isValidAccessRequestCsrfToken($_POST["csrf_token"] ?? null)) {
         $errorCode = "review_changed";
     }
 } else {
-    $implementationNotes = trim((string) ($_POST["implementation_notes"] ?? ""));
+    $implementationNotes = mb_strtoupper(trim((string) ($_POST["implementation_notes"] ?? "")), 'UTF-8');
 
-    if (!canMarkAccessRequestImplemented($record)) {
+    if (!isAccessRequestItReviewer()) {
+        $errorCode = "not_permitted";
+    } elseif (!canMarkAccessRequestImplemented($record)) {
         $errorCode = "implementation_unavailable";
     } elseif (getAccessRequestTextLength($implementationNotes) > ACCESS_REQUEST_REVIEW_NOTES_MAX_LENGTH) {
         $errorCode = "review_too_long";

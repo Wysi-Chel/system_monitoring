@@ -152,17 +152,23 @@ Moved here from the MICEI MIS portal (micei_mis).
                                       and the user's current accesses
   update_access_request_status.php  - saves each step and records the signed-in user
 
+- Accounts: each person signs in to the MICEI portal with their own username. The portal role
+  decides who can save each step:
+  ita, jrn  Administrator        IT review and implementation
+  lba       Super Administrator  final review
+
 - Workflow:
   1. The requester ticks one or more modules and names the manager requesting the access.
      Status: Pending.
-  2. IT review: IT ticks the modules to grant this user, describes the access for each, and
-     sends it for final review. Status: For Approval.
-  3. Final review: approve or decline the access IT requested, including any changes from what
-     the user asked for, with notes. Notes are required when declining.
-     Declined: IT can revise the access and send it again. Approved: status Approved.
-  4. Implementation: IT sets up the approved access and marks it implemented. Status: Implemented.
-     Each granted module is then recorded under the user's DMIS username. A later implemented
-     request for the same module replaces that module's recorded access.
+  2. IT review (ITA or JRN): IT ticks the modules to grant this user, describes the access for
+     each, and sends it to LBA for final review. Status: For Approval.
+  3. Final review (LBA only): tick each module to approve. Notes are required for any module
+     left unticked. Approving at least one module sends the request back to IT with status
+     Approved. Approving none declines it, and IT can revise the access and send it again.
+  4. Implementation (ITA or JRN): IT sets up the approved modules and marks the request
+     implemented. Status: Implemented. Each approved module is then recorded under the user's
+     DMIS username. A later implemented request for the same module replaces that module's
+     recorded access.
 
 - The dashboard shows notifications for new requests (Pending), requests waiting for final
   approval (For Approval), and approved requests waiting for IT to implement (Approved).

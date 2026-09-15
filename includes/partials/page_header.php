@@ -3,18 +3,18 @@ $headerKicker = $headerKicker ?? $company["company_name"];
 $headerTitle = $headerTitle ?? $company["system_name"];
 $currentScript = basename((string) ($_SERVER["SCRIPT_NAME"] ?? "index.php"));
 $defaultHeaderDescriptions = [
-    "index.php" => "Track daily transactions, exceptions, and action items in one workspace.",
-    "ticket_monitoring.php" => "Create, review, and follow support tickets from submission to resolution.",
+    "index.php" => "",
+    "ticket_monitoring.php" => "",
     "monitoring_record.php" => "Review the complete activity, supporting details, and actions for a monitoring record.",
     "promote_to_live.php" => "Review test changes before promoting them to the live monitoring system.",
-    "access_requests.php" => "Review public DMIS access requests through IT review, approval, and implementation, and see each user's recorded accesses.",
-    "access_request_view.php" => "Request the access to grant, decide on it in the final review, then mark it implemented.",
+    "access_requests.php" => "",
+    "access_request_view.php" => "",
 ];
 $headerDescription = $headerDescription ?? ($defaultHeaderDescriptions[$currentScript] ?? "");
 $showCompanySwitch = $showCompanySwitch ?? true;
 $appEnvironmentLabel = getApplicationEnvironmentDisplayLabel();
 $todayDisplay = (new DateTimeImmutable("now", new DateTimeZone("Asia/Manila")))->format("M d, Y");
-$portalUser = $_SESSION[MONITORING_PORTAL_SESSION_USER_KEY] ?? [];
+$portalUser = getMonitoringPortalUser();
 $portalUserName = trim((string) ($portalUser["full_name"] ?? $portalUser["name"] ?? "Portal user"));
 $portalUserRole = trim((string) ($portalUser["role"] ?? "User"));
 $portalUserInitial = uppercaseText(substr($portalUserName !== "" ? $portalUserName : "U", 0, 1));
@@ -158,7 +158,7 @@ $navItems = [
         </a>
     </section>
 
-    <div class="sidebar-footer">
+    <div class="sidebar-footer" style="margin-top:-20px;">
         <div class="sidebar-theme-control">
             <span class="sidebar-theme-label">Appearance</span>
             <button type="button" class="theme-toggle theme-switch" id="theme-toggle" aria-pressed="false" aria-label="Switch to dark mode" title="Switch to dark mode">

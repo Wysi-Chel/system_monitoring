@@ -27,10 +27,10 @@ $csrfToken = getAccessRequestCsrfToken();
 $recordStatus = trim((string) ($record["status"] ?? ""));
 $reviewErrorMessages = [
     "session_expired" => "Your session token expired. Refresh the page and save again.",
+    "not_permitted" => "Your account cannot save this step. IT sends and implements the access, and the super admin gives the final review.",
     "grant_access_required" => "Tick at least one module to request for this user.",
     "it_locked" => "The access can no longer be changed because the final review approved it.",
-    "invalid_final_decision" => "Select Approve or Decline for the final review.",
-    "decline_notes_required" => "Add notes explaining why the access is declined.",
+    "final_notes_required" => "Add notes for the modules you did not approve.",
     "final_unavailable" => "The final review is only open while the request is waiting for approval.",
     "review_changed" => "IT changed the requested access after you opened this page. Check it again before deciding.",
     "implementation_unavailable" => "Only approved requests can be marked as implemented.",
@@ -51,10 +51,13 @@ $savedMessage = $record !== null
 $requestedModules = splitMultiValueText($record["module"] ?? "");
 $grantAccess = decodeAccessRequestGrantAccess($record["grant_access"] ?? null);
 $accessComparisonRows = buildAccessRequestComparisonRows($requestedModules, $grantAccess);
+$approvedAccess = decodeAccessRequestGrantAccess($record["approved_access"] ?? null);
+$finalReviewRows = buildAccessRequestFinalReviewRows($grantAccess, $approvedAccess);
+$modulesNotIncluded = array_values(array_diff($requestedModules, array_keys($grantAccess)));
 $itNotes = trim((string) ($record["it_notes"] ?? ""));
 $finalDecision = trim((string) ($record["final_decision"] ?? ""));
 $finalNotes = trim((string) ($record["final_notes"] ?? ""));
-$implementationNotes = trim((string) ($record["implementation_notes"] ?? ""));
+$implementationNotes = mb_strtoupper(trim((string) ($record["implementation_notes"] ?? "")), 'UTF-8');
 $hasItReview = trim((string) ($record["it_reviewed_at"] ?? "")) !== "";
 // A Pending request can still hold an IT draft saved before IT reviews were sent for approval.
 $isItReviewSent = $hasItReview && $recordStatus !== "Pending";
@@ -62,13 +65,9 @@ $hasFinalReview = trim((string) ($record["final_reviewed_at"] ?? "")) !== "";
 $isImplemented = trim((string) ($record["implemented_at"] ?? "")) !== "";
 // Until IT saves access, start from the modules the requester asked for.
 $grantSelectedModules = $hasItReview ? array_keys($grantAccess) : $requestedModules;
-$canSubmitItReview = $record !== null && canSubmitAccessRequestItReview($record);
-$canSaveFinalReview = $record !== null && canSaveAccessRequestFinalReview($record);
-$canMarkImplemented = $record !== null && canMarkAccessRequestImplemented($record);
-$finalDecisionLabels = [
-    "Approved" => "Approve",
-    "Declined" => "Decline",
-];
+$canSubmitItReview = $record !== null && isAccessRequestItReviewer() && canSubmitAccessRequestItReview($record);
+$canSaveFinalReview = $record !== null && isAccessRequestFinalReviewer() && canSaveAccessRequestFinalReview($record);
+$canMarkImplemented = $record !== null && isAccessRequestItReviewer() && canMarkAccessRequestImplemented($record);
 
 if ($finalDecision !== "") {
     $finalStatusLabel = $finalDecision;
@@ -101,6 +100,8 @@ $detailFields = $record === null ? [] : [
 $accessChangeTags = [
     "added" => ["label" => "Added by IT", "class" => "ticket"],
     "not_included" => ["label" => "Not included", "class" => "alert"],
+    "approved" => ["label" => "Approved", "class" => "ticket"],
+    "not_approved" => ["label" => "Not approved", "class" => "alert"],
 ];
 $renderAccessList = static function (array $rows) use ($accessChangeTags): void {
     if ($rows === []) {
@@ -291,12 +292,6 @@ $renderReviewNotes = static function (string $label, string $notes): void {
         <?php endif; ?>
 
         <?php if ($canSaveFinalReview): ?>
-        <div class="field">
-            <label>Access requested by IT</label>
-            <?php $renderAccessList($accessComparisonRows); ?>
-        </div>
-        <?php $renderReviewNotes("IT notes", $itNotes); ?>
-
         <form action="update_access_request_status.php" method="POST" class="access-request-review-form" data-final-review-form>
             <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
             <input type="hidden" name="company" value="<?= e($company["key"]) ?>">
@@ -304,23 +299,34 @@ $renderReviewNotes = static function (string $label, string $notes): void {
             <input type="hidden" name="review_type" value="final">
             <input type="hidden" name="it_reviewed_at" value="<?= e($record["it_reviewed_at"]) ?>">
 
-            <div class="access-request-review-grid">
-                <div class="field">
-                    <label id="access-final-decision-label">Decision</label>
-                    <div class="option-group" role="radiogroup" aria-labelledby="access-final-decision-label">
-                        <?php foreach ($accessRequestFinalDecisionOptions as $optionIndex => $option): ?>
-                        <label class="option-button" for="access-final-decision-<?= e($optionIndex) ?>">
-                            <input type="radio" id="access-final-decision-<?= e($optionIndex) ?>" name="final_decision" value="<?= e($option) ?>" required>
-                            <span><?= e($finalDecisionLabels[$option] ?? $option) ?></span>
+            <div class="field">
+                <label id="access-approve-modules-label">Modules to approve</label>
+                <p class="field-note">Tick each module to approve. Add notes for any module you leave unticked. Leaving every module unticked declines the request.</p>
+                <div class="access-module-list" role="group" aria-labelledby="access-approve-modules-label">
+                    <?php foreach (array_keys($grantAccess) as $moduleIndex => $module): ?>
+                    <?php $moduleFieldId = "access-approve-module-" . $moduleIndex; ?>
+                    <div class="access-module-row">
+                        <label class="option-button" for="<?= e($moduleFieldId) ?>">
+                            <input type="checkbox" id="<?= e($moduleFieldId) ?>" name="approve_modules[]" value="<?= e($module) ?>">
+                            <span><?= e($module) ?></span>
                         </label>
-                        <?php endforeach; ?>
+                        <span class="access-list-details"><?= e($grantAccess[$module] !== "" ? $grantAccess[$module] : "No access details added") ?></span>
+                        <span class="access-list-tag">
+                            <?php if (!in_array($module, $requestedModules, true)): ?>
+                            <span class="dashboard-chip <?= e($accessChangeTags["added"]["class"]) ?>"><?= e($accessChangeTags["added"]["label"]) ?></span>
+                            <?php endif; ?>
+                        </span>
                     </div>
+                    <?php endforeach; ?>
                 </div>
+                <?php if ($modulesNotIncluded !== []): ?>
+                <p class="field-note">Requested by the user but not included by IT: <?= e(implode(", ", $modulesNotIncluded)) ?></p>
+                <?php endif; ?>
+            </div>
 
-                <div class="field">
-                    <label for="access-final-notes">Notes</label>
-                    <textarea id="access-final-notes" name="final_notes" rows="4" maxlength="<?= e(ACCESS_REQUEST_REVIEW_NOTES_MAX_LENGTH) ?>" placeholder="Approval remarks, or the reason for declining (required when declining)"><?= e($finalNotes) ?></textarea>
-                </div>
+            <div class="field access-review-notes-field">
+                <label for="access-final-notes">Notes</label>
+                <textarea id="access-final-notes" name="final_notes" rows="4" maxlength="<?= e(ACCESS_REQUEST_REVIEW_NOTES_MAX_LENGTH) ?>" placeholder="Reason for each module not approved, or approval remarks"><?= e($finalNotes) ?></textarea>
             </div>
 
             <div class="buttons">
@@ -331,10 +337,15 @@ $renderReviewNotes = static function (string $label, string $notes): void {
             </div>
         </form>
         <?php elseif ($finalDecision !== ""): ?>
+        <?php if ($finalReviewRows !== []): ?>
+        <?php $renderAccessList($finalReviewRows); ?>
+        <?php endif; ?>
         <?php if ($finalDecision === "Declined"): ?>
         <p class="field-note access-review-hint">IT can revise the access in the IT review and send it again.</p>
         <?php endif; ?>
         <?php $renderReviewNotes("Final review notes", $finalNotes); ?>
+        <?php elseif ($recordStatus === "For Approval"): ?>
+        <div class="summary-card-empty">Waiting for the super admin's final review.</div>
         <?php else: ?>
         <div class="summary-card-empty">The final review opens once IT sends the access to grant.</div>
         <?php endif; ?>
@@ -365,7 +376,7 @@ $renderReviewNotes = static function (string $label, string $notes): void {
             <input type="hidden" name="review_type" value="implementation">
 
             <div class="field access-review-notes-field">
-                <textarea id="access-implementation-notes" name="implementation_notes" rows="3" maxlength="<?= e(ACCESS_REQUEST_REVIEW_NOTES_MAX_LENGTH) ?>" placeholder="Account changes made, effective date, or follow-up"><?= e($implementationNotes) ?></textarea>
+                <textarea id="access-implementation-notes" class="access-uppercase-input" name="implementation_notes" rows="3" maxlength="<?= e(ACCESS_REQUEST_REVIEW_NOTES_MAX_LENGTH) ?>" placeholder="Account changes made, effective date, or follow-up"><?= e($implementationNotes) ?></textarea>
             </div>
 
             <div class="buttons">
@@ -378,6 +389,8 @@ $renderReviewNotes = static function (string $label, string $notes): void {
         <?php elseif ($isImplemented): ?>
         <p class="field-note access-review-hint">The approved accesses are recorded under this user's current accesses.</p>
         <?php $renderReviewNotes("Implementation notes", $implementationNotes); ?>
+        <?php elseif ($recordStatus === "Approved"): ?>
+        <div class="summary-card-empty">Waiting for IT to implement the approved access.</div>
         <?php else: ?>
         <div class="summary-card-empty">Implementation opens once the final review approves the access.</div>
         <?php endif; ?>
@@ -420,11 +433,14 @@ $renderReviewNotes = static function (string $label, string $notes): void {
 <script>
 document.querySelectorAll("[data-final-review-form]").forEach(function (form) {
     var notes = form.querySelector("[name='final_notes']");
-    form.addEventListener("change", function (event) {
-        if (event.target.name === "final_decision") {
-            notes.required = event.target.value === "Declined";
-        }
-    });
+    var modules = form.querySelectorAll("[name='approve_modules[]']");
+    var updateNotesRequired = function () {
+        notes.required = Array.prototype.some.call(modules, function (module) {
+            return !module.checked;
+        });
+    };
+    form.addEventListener("change", updateNotesRequired);
+    updateNotesRequired();
 });
 </script>
 <script src="assets/js/index.js" defer></script>

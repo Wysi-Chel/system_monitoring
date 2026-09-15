@@ -1,6 +1,7 @@
 <?php
 const MONITORING_PORTAL_LOGIN_URL = "/micei_mis/login.php";
 const MONITORING_PORTAL_SESSION_USER_KEY = "user";
+const MONITORING_PORTAL_SUPER_ADMIN_ROLE = "Super Administrator";
 
 function startMonitoringSession(): void
 {
@@ -17,11 +18,21 @@ function startMonitoringSession(): void
     session_start();
 }
 
-function isMonitoringAuthenticated(): bool
+function getMonitoringPortalUser(): array
 {
     startMonitoringSession();
-    $portalUser = $_SESSION[MONITORING_PORTAL_SESSION_USER_KEY] ?? null;
-    return is_array($portalUser) && !empty($portalUser["id"]);
+    $portalUser = $_SESSION[MONITORING_PORTAL_SESSION_USER_KEY] ?? [];
+    return is_array($portalUser) ? $portalUser : [];
+}
+
+function isMonitoringAuthenticated(): bool
+{
+    return !empty(getMonitoringPortalUser()["id"]);
+}
+
+function isMonitoringSuperAdmin(): bool
+{
+    return trim((string) (getMonitoringPortalUser()["role"] ?? "")) === MONITORING_PORTAL_SUPER_ADMIN_ROLE;
 }
 
 function getSafeAuthRedirectTarget(?string $target): string

@@ -7534,13 +7534,6 @@ body.page-access-requests .access-request-status-count .summary-card-value {
     box-shadow: 0 0 0 3px var(--focus);
 }
 
-.access-request-review-grid {
-    display: grid;
-    grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
-    gap: 14px;
-    margin-bottom: 14px;
-}
-
 .page-access-requests .form-alert-error {
     margin-bottom: 14px;
     padding: 12px 14px;
@@ -7657,6 +7650,14 @@ html.dark-theme .status-pill-submitted {
     margin-bottom: 14px;
 }
 
+.access-uppercase-input {
+    text-transform: uppercase;
+}
+
+.access-uppercase-input::placeholder {
+    text-transform: none;
+}
+
 .access-request-tabs {
     display: flex;
     flex-wrap: wrap;
@@ -7768,7 +7769,6 @@ body.page-system-monitoring:not(.page-print-summary) .dashboard-notification .da
 }
 
 @media (max-width: 700px) {
-    .access-request-review-grid,
     .access-module-row,
     .access-list-item,
     .dashboard-notification-grid {

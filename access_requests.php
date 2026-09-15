@@ -243,6 +243,7 @@ $showCompanySwitch = true;
                     "Submitted" => formatDisplayTimestamp($row["created_at"] ?? null),
                     "IT review by" => $row["it_reviewed_by"] ?? "",
                     "Final decision" => $row["final_decision"] ?? "",
+                    "Approved modules" => implode(", ", array_keys(decodeAccessRequestGrantAccess($row["approved_access"] ?? null))),
                     "Final reviewed by" => $row["final_reviewed_by"] ?? "",
                     "Implemented by" => $row["implemented_by"] ?? "",
                 ];

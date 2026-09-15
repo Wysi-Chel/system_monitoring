@@ -556,6 +556,7 @@ function ensureAccessRequestTable(PDO $pdo, array $company): void
             it_reviewed_by VARCHAR(150) NULL,
             it_reviewed_at DATETIME NULL,
             final_decision VARCHAR(40) NULL,
+            approved_access TEXT NULL,
             final_notes TEXT NULL,
             final_reviewed_by VARCHAR(150) NULL,
             final_reviewed_at DATETIME NULL,
@@ -582,7 +583,8 @@ function ensureAccessRequestTable(PDO $pdo, array $company): void
     ensureMysqlTableColumn($pdo, $tableNameSql, "it_reviewed_by", "it_reviewed_by VARCHAR(150) NULL AFTER it_notes");
     ensureMysqlTableColumn($pdo, $tableNameSql, "it_reviewed_at", "it_reviewed_at DATETIME NULL AFTER it_reviewed_by");
     ensureMysqlTableColumn($pdo, $tableNameSql, "final_decision", "final_decision VARCHAR(40) NULL AFTER it_reviewed_at");
-    ensureMysqlTableColumn($pdo, $tableNameSql, "final_notes", "final_notes TEXT NULL AFTER final_decision");
+    ensureMysqlTableColumn($pdo, $tableNameSql, "approved_access", "approved_access TEXT NULL AFTER final_decision");
+    ensureMysqlTableColumn($pdo, $tableNameSql, "final_notes", "final_notes TEXT NULL AFTER approved_access");
     ensureMysqlTableColumn($pdo, $tableNameSql, "final_reviewed_by", "final_reviewed_by VARCHAR(150) NULL AFTER final_notes");
     ensureMysqlTableColumn($pdo, $tableNameSql, "final_reviewed_at", "final_reviewed_at DATETIME NULL AFTER final_reviewed_by");
     ensureMysqlTableColumn($pdo, $tableNameSql, "implementation_notes", "implementation_notes TEXT NULL AFTER final_reviewed_at");
@@ -620,6 +622,13 @@ function backfillAccessRequestWorkflowStatuses(PDO $pdo, string $tableNameSql): 
         "UPDATE {$tableNameSql}
          SET status = 'Pending'
          WHERE status NOT IN ('Pending', 'For Approval', 'Approved', 'Implemented', 'Declined')"
+    );
+    // Approvals saved before the per-module final review approved every module IT requested.
+    $pdo->exec(
+        "UPDATE {$tableNameSql}
+         SET approved_access = grant_access
+         WHERE final_decision = 'Approved'
+           AND approved_access IS NULL"
     );
     // it_status now tracks implementation, which only happens after approval.
     $pdo->exec(

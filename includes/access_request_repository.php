@@ -52,11 +52,7 @@ function getAccessRequestTextLength(string $value): int
 
 function getAccessRequestPortalUserName(): string
 {
-    $portalUser = $_SESSION[MONITORING_PORTAL_SESSION_USER_KEY] ?? [];
-    if (!is_array($portalUser)) {
-        $portalUser = [];
-    }
-
+    $portalUser = getMonitoringPortalUser();
     $userName = trim((string) ($portalUser["full_name"] ?? $portalUser["name"] ?? $portalUser["username"] ?? ""));
     return $userName !== "" ? $userName : "Portal user";
 }
@@ -170,6 +166,44 @@ function buildAccessRequestComparisonRows(array $requestedModules, array $grantA
     }
 
     return $rows;
+}
+
+function buildAccessRequestApprovedAccess(array $input, array $grantAccess): array
+{
+    $approvedModules = is_array($input["approve_modules"] ?? null) ? $input["approve_modules"] : [];
+
+    // Only modules IT sent for final review can be approved.
+    return array_filter(
+        $grantAccess,
+        static fn($module): bool => in_array((string) $module, $approvedModules, true),
+        ARRAY_FILTER_USE_KEY
+    );
+}
+
+function buildAccessRequestFinalReviewRows(array $grantAccess, array $approvedAccess): array
+{
+    $rows = [];
+
+    foreach ($grantAccess as $module => $details) {
+        $rows[] = [
+            "module" => $module,
+            "details" => $details,
+            "change" => array_key_exists($module, $approvedAccess) ? "approved" : "not_approved",
+        ];
+    }
+
+    return $rows;
+}
+
+// IT accounts send the access to grant and implement it; the super admin gives the final review.
+function isAccessRequestItReviewer(): bool
+{
+    return !isMonitoringSuperAdmin();
+}
+
+function isAccessRequestFinalReviewer(): bool
+{
+    return isMonitoringSuperAdmin();
 }
 
 function getAccessRequestRecordStatus(array $record): string
@@ -435,6 +469,7 @@ function submitAccessRequestItReview(
              it_reviewed_by = :it_reviewed_by,
              it_reviewed_at = :it_reviewed_at,
              final_decision = NULL,
+             approved_access = NULL,
              status = 'For Approval'
          WHERE id = :id
            AND status IN ('Pending', 'For Approval', 'Declined')"
@@ -451,15 +486,19 @@ function saveAccessRequestFinalReview(
     PDO $pdo,
     string $tableNameSql,
     int $id,
-    string $decision,
+    array $approvedAccess,
     ?string $finalNotes,
     string $reviewedBy,
     string $reviewedItSubmissionAt
 ): bool {
+    // Approving at least one module sends the request to IT for implementation; approving none declines it.
     // The decision only applies to the IT submission the reviewer saw; a resubmission changes it_reviewed_at.
+    $decision = $approvedAccess !== [] ? "Approved" : "Declined";
+    $approvedAccessJson = $approvedAccess !== [] ? json_encode($approvedAccess, JSON_UNESCAPED_UNICODE) : null;
     $stmt = $pdo->prepare(
         "UPDATE {$tableNameSql}
          SET final_decision = :final_decision,
+             approved_access = :approved_access,
              final_notes = :final_notes,
              final_reviewed_by = :final_reviewed_by,
              final_reviewed_at = :final_reviewed_at,
@@ -469,6 +508,7 @@ function saveAccessRequestFinalReview(
            AND it_reviewed_at = :it_reviewed_at"
     );
     $stmt->bindValue(":final_decision", $decision, PDO::PARAM_STR);
+    $stmt->bindValue(":approved_access", $approvedAccessJson, $approvedAccessJson === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
     $stmt->bindValue(":final_notes", $finalNotes, $finalNotes === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
     $stmt->bindValue(":final_reviewed_by", $reviewedBy, PDO::PARAM_STR);
     $stmt->bindValue(":final_reviewed_at", getAccessRequestManilaTimestamp(), PDO::PARAM_STR);
@@ -558,7 +598,7 @@ function markAccessRequestImplemented(
                 granted_at = VALUES(granted_at)"
         );
 
-        foreach (decodeAccessRequestGrantAccess($record["grant_access"] ?? null) as $module => $details) {
+        foreach (decodeAccessRequestGrantAccess($record["approved_access"] ?? null) as $module => $details) {
             $accessStmt->execute([
                 ":dmis_username" => $record["dmis_username"],
                 ":requester_name" => $record["requester_name"],
