@@ -155,14 +155,14 @@ Moved here from the MICEI MIS portal (micei_mis).
 - Accounts: each person signs in to the MICEI portal with their own username. The portal role
   decides who can save each step:
   ita, jrn  Administrator        IT review and implementation
-  lba       Super Administrator  final review
+  sa        Super Administrator  final review  (SA = System Admin)
 
 - Workflow:
   1. The requester ticks one or more modules and names the manager requesting the access.
      Status: Pending.
   2. IT review (ITA or JRN): IT ticks the modules to grant this user, describes the access for
-     each, and sends it to LBA for final review. Status: For Approval.
-  3. Final review (LBA only): tick each module to approve. Notes are required for any module
+     each, and sends it to SA for final review. Status: For Approval.
+  3. Final review (SA only): tick each module to approve. Notes are required for any module
      left unticked. Approving at least one module sends the request back to IT with status
      Approved. Approving none declines it, and IT can revise the access and send it again.
   4. Implementation (ITA or JRN): IT sets up the approved modules and marks the request
@@ -183,3 +183,7 @@ Moved here from the MICEI MIS portal (micei_mis).
   php scripts\sync_environment_schema.php
   Requests saved before the two-step review are converted: Under Review becomes Pending,
   Approved and Declined keep their decision as the final review, and Cancelled becomes Declined.
+
+- Records saved while the final reviewer was still called LBA keep that label. Import
+  migrate_rename_lba_to_sa.sql once per database (live and test) to change every stored
+  LBA to SA. It is safe to import again.
