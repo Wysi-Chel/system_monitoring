@@ -257,6 +257,7 @@ function insertAccessRequest(PDO $pdo, array $company, array $values): string
             dealer,
             department,
             dmis_username,
+            position,
             module,
             description,
             requested_by,
@@ -268,6 +269,7 @@ function insertAccessRequest(PDO $pdo, array $company, array $values): string
             :dealer,
             :department,
             :dmis_username,
+            :position,
             :module,
             :description,
             :requested_by,
@@ -288,6 +290,7 @@ function insertAccessRequest(PDO $pdo, array $company, array $values): string
                 ":dealer" => $values["dealer"],
                 ":department" => $values["department"],
                 ":dmis_username" => $values["dmis_username"],
+                ":position" => $values["position"],
                 ":module" => $values["module"],
                 ":description" => $values["description"],
                 ":requested_by" => $values["requested_by"],
@@ -335,6 +338,7 @@ function buildAccessRequestWhereClause(array $filters, array &$bindings): string
             "reference_no",
             "requester_name",
             "dmis_username",
+            "position",
             "module",
             "department",
             "description",
@@ -563,6 +567,7 @@ function markAccessRequestImplemented(
         $accessStmt = $pdo->prepare(
             "INSERT INTO {$userAccessTableNameSql} (
                 dmis_username,
+                position,
                 requester_name,
                 dealer,
                 department,
@@ -575,6 +580,7 @@ function markAccessRequestImplemented(
                 granted_at
             ) VALUES (
                 :dmis_username,
+                :position,
                 :requester_name,
                 :dealer,
                 :department,
@@ -601,6 +607,7 @@ function markAccessRequestImplemented(
         foreach (decodeAccessRequestGrantAccess($record["approved_access"] ?? null) as $module => $details) {
             $accessStmt->execute([
                 ":dmis_username" => $record["dmis_username"],
+                ":position" => $record["position"],
                 ":requester_name" => $record["requester_name"],
                 ":dealer" => $record["dealer"],
                 ":department" => $record["department"],
@@ -666,6 +673,7 @@ function buildUserAccessWhereClause(array $filters, array &$bindings): string
         $searchValue = "%" . escapeLikeTerm($filters["search"]) . "%";
         $searchColumns = [
             "dmis_username",
+            "position",
             "requester_name",
             "department",
             "module",

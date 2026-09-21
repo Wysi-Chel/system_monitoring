@@ -16,6 +16,7 @@ $formValues = [
     "dealer" => "",
     "department" => "",
     "dmis_username" => "",
+    "position" => "",
     "modules" => [],
     "description" => "",
     "requested_by" => "",
@@ -35,6 +36,7 @@ if (($_SERVER["REQUEST_METHOD"] ?? "GET") === "POST") {
         "dealer" => normalizeAllowedFilter($_POST["dealer"] ?? "", $accessRequestDealerOptions),
         "department" => normalizeAllowedFilter($_POST["department"] ?? "", $departmentOptions),
         "dmis_username" => normalizeSearchFilter($_POST["dmis_username"] ?? ""),
+        "position" => normalizeSearchFilter($_POST["position"] ?? ""),
         "modules" => normalizeAccessRequestModules($_POST["modules"] ?? [], $moduleOptions),
         "description" => trim((string) ($_POST["description"] ?? "")),
         "requested_by" => uppercaseText(normalizeSearchFilter($_POST["requested_by"] ?? "")),
@@ -50,6 +52,7 @@ if (($_SERVER["REQUEST_METHOD"] ?? "GET") === "POST") {
         || $formValues["dealer"] === ""
         || $formValues["department"] === ""
         || $formValues["dmis_username"] === ""
+        || $formValues["position"] === ""
         || $formValues["description"] === ""
         || $formValues["requested_by"] === ""
     ) {
@@ -64,6 +67,7 @@ if (($_SERVER["REQUEST_METHOD"] ?? "GET") === "POST") {
         getAccessRequestTextLength($formValues["requester_name"]) > ACCESS_REQUEST_NAME_MAX_LENGTH
         || getAccessRequestTextLength($formValues["requested_by"]) > ACCESS_REQUEST_NAME_MAX_LENGTH
         || getAccessRequestTextLength($formValues["dmis_username"]) > ACCESS_REQUEST_USERNAME_MAX_LENGTH
+        || getAccessRequestTextLength($formValues["position"]) > ACCESS_REQUEST_USERNAME_MAX_LENGTH
     ) {
         $formErrors[] = "A name or the DMIS username is too long.";
     }
@@ -92,6 +96,7 @@ if (($_SERVER["REQUEST_METHOD"] ?? "GET") === "POST") {
                 "dealer" => $formValues["dealer"],
                 "department" => $formValues["department"],
                 "dmis_username" => $formValues["dmis_username"],
+                "position" => $formValues["position"],
                 "module" => implode(", ", $formValues["modules"]),
                 "description" => $formValues["description"],
                 "requested_by" => $formValues["requested_by"],
@@ -154,7 +159,7 @@ $csrfToken = getAccessRequestCsrfToken();
         <section class="public-success">
             <span class="success-check">✓</span>
             <span class="public-kicker">Request received</span>
-            <h1>Your DMIS access request is now pending review.</h1>
+            <h1>Your DMIS access request is now pending for review.</h1>
             <strong class="tracking-reference"><?= e($submittedReference) ?></strong>
             <div class="public-success-actions"><a class="btn btn-primary" href="<?= e($publicPortalUrl) ?>">Return to request portal</a><a class="btn btn-secondary" href="public_access_request.php">Submit another request</a></div>
         </section>
@@ -179,6 +184,10 @@ $csrfToken = getAccessRequestCsrfToken();
                     <div class="form-group">
                         <label for="access-dmis-username">DMIS username <span class="required">*</span></label>
                         <input type="text" id="access-dmis-username" name="dmis_username" maxlength="<?= e(ACCESS_REQUEST_USERNAME_MAX_LENGTH) ?>" value="<?= e($formValues["dmis_username"]) ?>" autocomplete="off" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="access-position">Position <span class="required">*</span></label>
+                        <input type="text" id="access-position" name="position" maxlength="<?= e(ACCESS_REQUEST_USERNAME_MAX_LENGTH) ?>" value="<?= e($formValues["position"]) ?>" autocomplete="off" required>
                     </div>
                     <div class="form-group">
                         <label for="access-dealer">Dealer <span class="required">*</span></label>

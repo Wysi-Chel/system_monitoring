@@ -196,6 +196,7 @@ $showCompanySwitch = true;
                         <div class="summary-card-main">
                             <span class="dashboard-activity-id"><?= e($group["dmis_username"]) ?></span>
                             <div class="dashboard-activity-title"><?= e($latestAccess["requester_name"] ?? "") ?></div>
+                            <div class="dashboard-activity-title"><?= e($latestAccess["position"] ?? "") ?></div>
                             <?php if ($metaParts !== []): ?>
                             <div class="dashboard-activity-meta"><?= e(implode(" / ", $metaParts)) ?></div>
                             <?php endif; ?>
@@ -238,6 +239,7 @@ $showCompanySwitch = true;
                 ]);
                 $cardFields = [
                     "DMIS username" => $row["dmis_username"] ?? "",
+                    "Position" => $row["position"] ?? "",
                     "Modules requested" => $row["module"] ?? "",
                     "Requested by" => $row["requested_by"] ?? "",
                     "Submitted" => formatDisplayTimestamp($row["created_at"] ?? null),

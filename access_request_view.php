@@ -89,6 +89,7 @@ $userAccessesUrl = buildUrl("access_requests.php", [
 $detailFields = $record === null ? [] : [
     ["label" => "Requestor", "value" => $record["requester_name"]],
     ["label" => "DMIS username", "value" => $record["dmis_username"]],
+    ["label" => "Position", "value" => $record["position"]],
     ["label" => "Dealer", "value" => $record["dealer"]],
     ["label" => "Department", "value" => $record["department"]],
     ["label" => "Modules requested", "value" => implode(", ", $requestedModules)],
@@ -401,6 +402,7 @@ $renderReviewNotes = static function (string $label, string $notes): void {
             <div>
                 <h2>Current Accesses</h2>
                 <div class="dashboard-activity-meta">DMIS username: <?= e($record["dmis_username"]) ?></div>
+                 <div class="dashboard-activity-meta">Position: <?= e($record["position"]) ?></div>
             </div>
             <a href="<?= e($userAccessesUrl) ?>" class="button-link secondary icon-button" aria-label="Open user accesses" title="Open user accesses">
                 <?= iconSvg("users") ?>

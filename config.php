@@ -546,6 +546,7 @@ function ensureAccessRequestTable(PDO $pdo, array $company): void
             dealer VARCHAR(100) NOT NULL,
             department VARCHAR(100) NOT NULL,
             dmis_username VARCHAR(100) NOT NULL,
+            position VARCHAR(100) NOT NULL,
             module VARCHAR(100) NOT NULL,
             description TEXT NOT NULL,
             requested_by VARCHAR(150) NULL,
@@ -572,6 +573,7 @@ function ensureAccessRequestTable(PDO $pdo, array $company): void
             UNIQUE KEY uniq_access_request_reference (reference_no),
             INDEX idx_access_request_status (status),
             INDEX idx_access_request_username (dmis_username),
+            INDEX idx_access_request_position (position),
             INDEX idx_access_request_created (created_at)
         )"
     );
@@ -650,6 +652,7 @@ function ensureUserAccessTable(PDO $pdo, array $company): void
         "CREATE TABLE IF NOT EXISTS {$tableNameSql} (
             id INT AUTO_INCREMENT PRIMARY KEY,
             dmis_username VARCHAR(100) NOT NULL,
+            position VARCHAR(100) NOT NULL,
             requester_name VARCHAR(150) NOT NULL,
             dealer VARCHAR(100) NOT NULL,
             department VARCHAR(100) NOT NULL,
