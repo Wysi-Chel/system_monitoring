@@ -99,6 +99,67 @@ function getAccessRequestManilaTimestamp(): string
     return (new DateTimeImmutable("now", new DateTimeZone("Asia/Manila")))->format("Y-m-d H:i:s");
 }
 
+function getAccessRequestManilaToday(): string
+{
+    return (new DateTimeImmutable("now", new DateTimeZone("Asia/Manila")))->format("Y-m-d");
+}
+
+// A request keyed in from inside the system is credited to the side that encoded it, so a
+// walk-in or phoned-in request still says where it came from. The public form keeps naming a manager.
+function getAccessRequestEncoderSideOptions(): array
+{
+    return ["IT", "SA"];
+}
+
+function getAccessRequestEncoderSide(): string
+{
+    return isMonitoringSuperAdmin() ? "SA" : "IT";
+}
+
+// The public form and the internal encoding form capture the same request, so they share these rules.
+function validateAccessRequestValues(array $values): array
+{
+    $errors = [];
+
+    if (
+        ($values["requester_name"] ?? "") === ""
+        || ($values["dealer"] ?? "") === ""
+        || ($values["department"] ?? "") === ""
+        || ($values["dmis_username"] ?? "") === ""
+        || ($values["position"] ?? "") === ""
+        || ($values["description"] ?? "") === ""
+        || ($values["requested_by"] ?? "") === ""
+    ) {
+        $errors[] = "Complete all required fields.";
+    }
+
+    if (($values["modules"] ?? []) === []) {
+        $errors[] = "Select at least one module.";
+    }
+
+    $dateOfRequest = (string) ($values["date_of_request"] ?? "");
+    if ($dateOfRequest === "") {
+        $errors[] = "Enter the date of request as a valid date.";
+    } elseif ($dateOfRequest > getAccessRequestManilaToday()) {
+        $errors[] = "The date of request cannot be in the future.";
+    }
+
+    if (
+        getAccessRequestTextLength((string) ($values["requester_name"] ?? "")) > ACCESS_REQUEST_NAME_MAX_LENGTH
+        || getAccessRequestTextLength((string) ($values["requested_by"] ?? "")) > ACCESS_REQUEST_NAME_MAX_LENGTH
+        || getAccessRequestTextLength((string) ($values["dmis_username"] ?? "")) > ACCESS_REQUEST_USERNAME_MAX_LENGTH
+        || getAccessRequestTextLength((string) ($values["position"] ?? "")) > ACCESS_REQUEST_USERNAME_MAX_LENGTH
+    ) {
+        $errors[] = "A name or the DMIS username is too long.";
+    }
+
+    if (getAccessRequestTextLength((string) ($values["description"] ?? "")) > ACCESS_REQUEST_DESCRIPTION_MAX_LENGTH) {
+        $errors[] = "Keep the description under " . ACCESS_REQUEST_DESCRIPTION_MAX_LENGTH . " characters.";
+    }
+
+    return $errors;
+}
+
 function normalizeAccessRequestModules($selectedModules, array $moduleOptions): array
 {
     if (!is_array($selectedModules)) {
@@ -258,9 +319,11 @@ function insertAccessRequest(PDO $pdo, array $company, array $values): string
             department,
             dmis_username,
             position,
+            date_of_request,
             module,
             description,
             requested_by,
+            encoded_by,
             status,
             submitted_ip
         ) VALUES (
@@ -270,9 +333,11 @@ function insertAccessRequest(PDO $pdo, array $company, array $values): string
             :department,
             :dmis_username,
             :position,
+            :date_of_request,
             :module,
             :description,
             :requested_by,
+            :encoded_by,
             :status,
             :submitted_ip
         )"
@@ -291,9 +356,11 @@ function insertAccessRequest(PDO $pdo, array $company, array $values): string
                 ":department" => $values["department"],
                 ":dmis_username" => $values["dmis_username"],
                 ":position" => $values["position"],
+                ":date_of_request" => $values["date_of_request"] ?? null,
                 ":module" => $values["module"],
                 ":description" => $values["description"],
                 ":requested_by" => $values["requested_by"],
+                ":encoded_by" => ($values["encoded_by"] ?? "") !== "" ? $values["encoded_by"] : null,
                 ":status" => $values["status"],
                 ":submitted_ip" => $values["submitted_ip"],
             ]);
@@ -651,13 +718,19 @@ function buildAccessRequestFilterBadges(array $filters): array
     return $badges;
 }
 
-function fetchUserAccessesByUsername(PDO $pdo, string $tableNameSql, string $dmisUsername): array
-{
+// The request date is read back from the originating request so accesses recorded earlier show it too.
+function fetchUserAccessesByUsername(
+    PDO $pdo,
+    string $tableNameSql,
+    string $dmisUsername,
+    string $accessRequestTableNameSql
+): array {
     $stmt = $pdo->prepare(
-        "SELECT *
-         FROM {$tableNameSql}
-         WHERE dmis_username = :dmis_username
-         ORDER BY module ASC"
+        "SELECT ua.*, ar.created_at AS request_created_at
+         FROM {$tableNameSql} ua
+         LEFT JOIN {$accessRequestTableNameSql} ar ON ar.id = ua.access_request_id
+         WHERE ua.dmis_username = :dmis_username
+         ORDER BY ua.module ASC"
     );
     $stmt->execute([":dmis_username" => $dmisUsername]);
 
@@ -713,8 +786,14 @@ function countUserAccessUsers(PDO $pdo, string $tableNameSql, array $filters): i
     return (int) $stmt->fetchColumn();
 }
 
-function fetchUserAccessGroups(PDO $pdo, string $tableNameSql, array $filters, int $limit, int $offset): array
-{
+function fetchUserAccessGroups(
+    PDO $pdo,
+    string $tableNameSql,
+    array $filters,
+    int $limit,
+    int $offset,
+    string $accessRequestTableNameSql
+): array {
     $bindings = [];
     $whereClause = buildUserAccessWhereClause($filters, $bindings);
     $usernameStmt = $pdo->prepare(
@@ -741,10 +820,11 @@ function fetchUserAccessGroups(PDO $pdo, string $tableNameSql, array $filters, i
     // A search narrows which users are listed, but each card still shows every access the user holds.
     $placeholders = implode(", ", array_fill(0, count($usernames), "?"));
     $accessStmt = $pdo->prepare(
-        "SELECT *
-         FROM {$tableNameSql}
-         WHERE dmis_username IN ({$placeholders})
-         ORDER BY dmis_username ASC, module ASC"
+        "SELECT ua.*, ar.created_at AS request_created_at
+         FROM {$tableNameSql} ua
+         LEFT JOIN {$accessRequestTableNameSql} ar ON ar.id = ua.access_request_id
+         WHERE ua.dmis_username IN ({$placeholders})
+         ORDER BY ua.dmis_username ASC, ua.module ASC"
     );
     $accessStmt->execute(array_values($usernames));
 

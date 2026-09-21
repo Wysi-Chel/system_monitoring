@@ -547,9 +547,11 @@ function ensureAccessRequestTable(PDO $pdo, array $company): void
             department VARCHAR(100) NOT NULL,
             dmis_username VARCHAR(100) NOT NULL,
             position VARCHAR(100) NOT NULL,
+            date_of_request DATE NULL,
             module VARCHAR(100) NOT NULL,
             description TEXT NOT NULL,
             requested_by VARCHAR(150) NULL,
+            encoded_by VARCHAR(150) NULL,
             status VARCHAR(40) NOT NULL DEFAULT 'Pending',
             it_status VARCHAR(40) NOT NULL DEFAULT 'Pending',
             grant_access TEXT NULL,
@@ -577,7 +579,9 @@ function ensureAccessRequestTable(PDO $pdo, array $company): void
             INDEX idx_access_request_created (created_at)
         )"
     );
+    ensureMysqlTableColumn($pdo, $tableNameSql, "date_of_request", "date_of_request DATE NULL AFTER position");
     ensureMysqlTableColumn($pdo, $tableNameSql, "requested_by", "requested_by VARCHAR(150) NULL AFTER description");
+    ensureMysqlTableColumn($pdo, $tableNameSql, "encoded_by", "encoded_by VARCHAR(150) NULL AFTER requested_by");
     ensureMysqlTableColumn($pdo, $tableNameSql, "it_status", "it_status VARCHAR(40) NOT NULL DEFAULT 'Pending' AFTER status");
     renameMysqlTableColumnIfNeeded($pdo, $tableNameSql, "implemented_access", "grant_access", "grant_access TEXT NULL");
     ensureMysqlTableColumn($pdo, $tableNameSql, "grant_access", "grant_access TEXT NULL AFTER it_status");
@@ -631,6 +635,12 @@ function backfillAccessRequestWorkflowStatuses(PDO $pdo, string $tableNameSql): 
          SET approved_access = grant_access
          WHERE final_decision = 'Approved'
            AND approved_access IS NULL"
+    );
+    // Requests captured before the form asked for a request date fall back to the day they were submitted.
+    $pdo->exec(
+        "UPDATE {$tableNameSql}
+         SET date_of_request = DATE(created_at)
+         WHERE date_of_request IS NULL"
     );
     // it_status now tracks implementation, which only happens after approval.
     $pdo->exec(

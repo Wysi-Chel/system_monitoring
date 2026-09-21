@@ -36,7 +36,7 @@ $records = $isAccessView ? [] : fetchAccessRequests(
     $pagination["offset"]
 );
 $userAccessGroups = $isAccessView
-    ? fetchUserAccessGroups($pdo, $userAccessTableNameSql, $filters, $pagination["limit"], $pagination["offset"])
+    ? fetchUserAccessGroups($pdo, $userAccessTableNameSql, $filters, $pagination["limit"], $pagination["offset"], $accessRequestTableNameSql)
     : [];
 $statusCounts = countAccessRequestsByStatus($pdo, $accessRequestTableNameSql, $accessRequestStatusOptions);
 $accessRequestQueryParams = buildMonitoringListQueryParams($company["key"], $filters) + $viewParams;
@@ -51,6 +51,7 @@ $hyundaiUrl = buildUrl("access_requests.php", $accessRequestQueryParams, [
     "page" => 1,
 ]);
 $clearFiltersUrl = buildUrl("access_requests.php", ["company" => $company["key"]] + $viewParams);
+$encodeAccessRequestUrl = buildUrl("encode_access_request.php", ["company" => $company["key"]]);
 $accessRequestSummaryAnchor = "#access-request-summary";
 $requestsViewUrl = buildUrl("access_requests.php", ["company" => $company["key"]]) . $accessRequestSummaryAnchor;
 $accessesViewUrl = buildUrl("access_requests.php", ["company" => $company["key"], "view" => "accesses"]) . $accessRequestSummaryAnchor;
@@ -96,10 +97,16 @@ $showCompanySwitch = true;
             <div>
                 <h2><?= $isAccessView ? "Recorded User Accesses" : "DMIS Access Requests" ?></h2>
             </div>
-            <a href="public_access_request.php" class="button-link secondary icon-button" target="_blank" rel="noopener" aria-label="Open public access request form" title="Open public access request form">
-                <?= iconSvg("external-link") ?>
-                <span class="sr-only">Open public access request form</span>
-            </a>
+            <div class="summary-card-action">
+                <a href="<?= e($encodeAccessRequestUrl) ?>" class="button-link primary icon-button" aria-label="Encode access request" title="Encode access request">
+                    <?= iconSvg("plus") ?>
+                    <span class="sr-only">Encode access request</span>
+                </a>
+                <a href="public_access_request.php" class="button-link secondary icon-button" target="_blank" rel="noopener" aria-label="Open public access request form" title="Open public access request form">
+                    <?= iconSvg("external-link") ?>
+                    <span class="sr-only">Open public access request form</span>
+                </a>
+            </div>
         </div>
 
         <nav class="access-request-tabs" aria-label="Access request views">
@@ -213,7 +220,7 @@ $showCompanySwitch = true;
                         <div class="summary-card-field">
                             <div class="summary-card-label"><?= e($access["module"]) ?></div>
                             <div class="summary-card-value"><?= e($accessDetails !== "" ? $accessDetails : "Access granted") ?></div>
-                            <a href="<?= e(buildUrl("access_request_view.php", ["company" => $company["key"], "id" => (int) $access["access_request_id"]])) ?>" class="access-list-source" title="Approved by <?= e($access["approved_by"]) ?>, implemented by <?= e($access["implemented_by"]) ?>"><?= e($access["reference_no"]) ?> · <?= e(formatDisplayDate($access["granted_at"])) ?></a>
+                            <a href="<?= e(buildUrl("access_request_view.php", ["company" => $company["key"], "id" => (int) $access["access_request_id"]])) ?>" class="access-list-source" title="Approved by <?= e($access["approved_by"]) ?>, implemented by <?= e($access["implemented_by"]) ?>"><?= e($access["reference_no"]) ?> · Requested <?= e(formatDisplayDate($access["request_created_at"] ?? null) ?: "N/A") ?> · Granted <?= e(formatDisplayDate($access["granted_at"])) ?></a>
                         </div>
                         <?php endforeach; ?>
                     </div>
@@ -240,6 +247,7 @@ $showCompanySwitch = true;
                 $cardFields = [
                     "DMIS username" => $row["dmis_username"] ?? "",
                     "Position" => $row["position"] ?? "",
+                    "Date of request" => formatDisplayDate($row["date_of_request"] ?? null),
                     "Modules requested" => $row["module"] ?? "",
                     "Requested by" => $row["requested_by"] ?? "",
                     "Submitted" => formatDisplayTimestamp($row["created_at"] ?? null),

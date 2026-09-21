@@ -11,12 +11,14 @@ startMonitoringSession();
 $portalBase = "/micei_mis";
 $publicPortalUrl = $portalBase . "/public_requests.php";
 $accessRequestDealerOptions = getAccessRequestDealerOptions($companyConfigs);
+$accessRequestToday = getAccessRequestManilaToday();
 $formValues = [
     "requester_name" => "",
     "dealer" => "",
     "department" => "",
     "dmis_username" => "",
     "position" => "",
+    "date_of_request" => $accessRequestToday,
     "modules" => [],
     "description" => "",
     "requested_by" => "",
@@ -37,6 +39,7 @@ if (($_SERVER["REQUEST_METHOD"] ?? "GET") === "POST") {
         "department" => normalizeAllowedFilter($_POST["department"] ?? "", $departmentOptions),
         "dmis_username" => normalizeSearchFilter($_POST["dmis_username"] ?? ""),
         "position" => normalizeSearchFilter($_POST["position"] ?? ""),
+        "date_of_request" => normalizeDateFilter($_POST["date_of_request"] ?? ""),
         "modules" => normalizeAccessRequestModules($_POST["modules"] ?? [], $moduleOptions),
         "description" => trim((string) ($_POST["description"] ?? "")),
         "requested_by" => uppercaseText(normalizeSearchFilter($_POST["requested_by"] ?? "")),
@@ -47,34 +50,7 @@ if (($_SERVER["REQUEST_METHOD"] ?? "GET") === "POST") {
         $formErrors[] = "Your form session expired. Please review the details and submit again.";
     }
 
-    if (
-        $formValues["requester_name"] === ""
-        || $formValues["dealer"] === ""
-        || $formValues["department"] === ""
-        || $formValues["dmis_username"] === ""
-        || $formValues["position"] === ""
-        || $formValues["description"] === ""
-        || $formValues["requested_by"] === ""
-    ) {
-        $formErrors[] = "Complete all required fields.";
-    }
-
-    if ($formValues["modules"] === []) {
-        $formErrors[] = "Select at least one module.";
-    }
-
-    if (
-        getAccessRequestTextLength($formValues["requester_name"]) > ACCESS_REQUEST_NAME_MAX_LENGTH
-        || getAccessRequestTextLength($formValues["requested_by"]) > ACCESS_REQUEST_NAME_MAX_LENGTH
-        || getAccessRequestTextLength($formValues["dmis_username"]) > ACCESS_REQUEST_USERNAME_MAX_LENGTH
-        || getAccessRequestTextLength($formValues["position"]) > ACCESS_REQUEST_USERNAME_MAX_LENGTH
-    ) {
-        $formErrors[] = "A name or the DMIS username is too long.";
-    }
-
-    if (getAccessRequestTextLength($formValues["description"]) > ACCESS_REQUEST_DESCRIPTION_MAX_LENGTH) {
-        $formErrors[] = "Keep the description under " . ACCESS_REQUEST_DESCRIPTION_MAX_LENGTH . " characters.";
-    }
+    $formErrors = [...$formErrors, ...validateAccessRequestValues($formValues)];
 
     if (!$formValues["privacy_consent"]) {
         $formErrors[] = "Confirm the accuracy declaration before submitting.";
@@ -97,6 +73,7 @@ if (($_SERVER["REQUEST_METHOD"] ?? "GET") === "POST") {
                 "department" => $formValues["department"],
                 "dmis_username" => $formValues["dmis_username"],
                 "position" => $formValues["position"],
+                "date_of_request" => $formValues["date_of_request"],
                 "module" => implode(", ", $formValues["modules"]),
                 "description" => $formValues["description"],
                 "requested_by" => $formValues["requested_by"],
@@ -188,6 +165,10 @@ $csrfToken = getAccessRequestCsrfToken();
                     <div class="form-group">
                         <label for="access-position">Position <span class="required">*</span></label>
                         <input type="text" id="access-position" name="position" maxlength="<?= e(ACCESS_REQUEST_USERNAME_MAX_LENGTH) ?>" value="<?= e($formValues["position"]) ?>" autocomplete="off" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="access-date-of-request">Date of request <span class="required">*</span></label>
+                        <input type="date" id="access-date-of-request" name="date_of_request" max="<?= e($accessRequestToday) ?>" value="<?= e($formValues["date_of_request"]) ?>" required>
                     </div>
                     <div class="form-group">
                         <label for="access-dealer">Dealer <span class="required">*</span></label>

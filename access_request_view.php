@@ -39,6 +39,7 @@ $reviewErrorMessages = [
 $reviewErrorMessage = $reviewErrorMessages[(string) ($_GET["error"] ?? "")] ?? "";
 $reviewErrorSection = in_array($_GET["review"] ?? "", ["it", "final", "implementation"], true) ? $_GET["review"] : "it";
 $savedTitles = [
+    "encoded" => "Access Request Encoded",
     "it" => "Sent For Final Review",
     "final" => "Final Review Saved",
     "implementation" => "Marked As Implemented",
@@ -78,7 +79,12 @@ if ($finalDecision !== "") {
 }
 
 $userAccesses = $record !== null
-    ? fetchUserAccessesByUsername($pdo, quoteMysqlIdentifier($company["user_access_table_name"]), (string) $record["dmis_username"])
+    ? fetchUserAccessesByUsername(
+        $pdo,
+        quoteMysqlIdentifier($company["user_access_table_name"]),
+        (string) $record["dmis_username"],
+        $accessRequestTableNameSql
+    )
     : [];
 $userAccessesUrl = buildUrl("access_requests.php", [
     "company" => $company["key"],
@@ -90,10 +96,12 @@ $detailFields = $record === null ? [] : [
     ["label" => "Requestor", "value" => $record["requester_name"]],
     ["label" => "DMIS username", "value" => $record["dmis_username"]],
     ["label" => "Position", "value" => $record["position"]],
+    ["label" => "Date of request", "value" => formatDisplayDate($record["date_of_request"] ?? null)],
     ["label" => "Dealer", "value" => $record["dealer"]],
     ["label" => "Department", "value" => $record["department"]],
     ["label" => "Modules requested", "value" => implode(", ", $requestedModules)],
     ["label" => "Requested by", "value" => $record["requested_by"] ?? ""],
+    ["label" => "Encoded by", "value" => $record["encoded_by"] ?? ""],
     ["label" => "Submitted", "value" => formatDisplayTimestamp($record["created_at"])],
     ["label" => "Submitted IP", "value" => $record["submitted_ip"]],
 ];
@@ -419,7 +427,7 @@ $renderReviewNotes = static function (string $label, string $notes): void {
             <li class="access-list-item">
                 <span class="access-list-module"><?= e($userAccess["module"]) ?></span>
                 <span class="access-list-details"><?= e($accessDetails !== "" ? $accessDetails : "Access granted") ?></span>
-                <a href="<?= e(buildUrl("access_request_view.php", ["company" => $company["key"], "id" => (int) $userAccess["access_request_id"]])) ?>" class="access-list-source" title="Approved by <?= e($userAccess["approved_by"]) ?>, implemented by <?= e($userAccess["implemented_by"]) ?>"><?= e($userAccess["reference_no"]) ?> · <?= e(formatDisplayDate($userAccess["granted_at"])) ?></a>
+                <a href="<?= e(buildUrl("access_request_view.php", ["company" => $company["key"], "id" => (int) $userAccess["access_request_id"]])) ?>" class="access-list-source" title="Approved by <?= e($userAccess["approved_by"]) ?>, implemented by <?= e($userAccess["implemented_by"]) ?>"><?= e($userAccess["reference_no"]) ?> · Requested <?= e(formatDisplayDate($userAccess["request_created_at"] ?? null) ?: "N/A") ?> · Granted <?= e(formatDisplayDate($userAccess["granted_at"])) ?></a>
             </li>
             <?php endforeach; ?>
         </ul>
